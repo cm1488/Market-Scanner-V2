@@ -1,0 +1,26 @@
+HOW TO USE THE PETP SCANNER  (the short version)
+
+GET IT (one time):
+1. Open the app link in your phone browser.
+2. iPhone: Share button -> "Add to Home Screen".
+   Android: menu (3 dots) -> "Add to Home screen".
+Now it's an app icon. Free forever.
+
+USE IT (every day):
+1. Open the app. It scans by itself.
+2. Rows with a green star = strong trade ideas. Everything else = wait.
+3. Tap a row to see:
+      Entry  = where to get in
+      Stop   = where to get out if wrong (red)
+      Target = where to take profit (green)
+      Size   = how much to buy so you only risk 1%
+   ...plus the chart and why it scored what it scored.
+4. Top buttons:
+      Scalp / Day / Swing  = how fast you like to trade
+      Consv / Balanced / Aggr = how picky it is (Consv = fewest, best)
+5. Tap the bell to get a beep when a new strong setup appears
+   (keep the app open for that).
+
+THE ONE RULE:
+No green star = no trade. And never risk money you can't afford to lose.
+This is information, not financial advice.
