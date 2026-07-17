@@ -15,6 +15,7 @@
  --green:#22c55e;--green-bg:#0c2a1a;--red:#ef4444;--red-bg:#2a0f0f;--amber:#f59e0b;--amber-bg:#291d05;
  --blue:#3b82f6;--blue-bg:#0e1d38}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+button,select,input{touch-action:manipulation}
 body{margin:0;background:var(--bg);color:var(--text);font:14px/1.45 -apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;padding-bottom:40px}
 header{position:sticky;top:0;z-index:20;background:rgba(11,15,20,.94);backdrop-filter:blur(8px);border-bottom:1px solid var(--border);padding:10px 14px calc(env(safe-area-inset-top)*0 + 10px)}
 h1{font-size:17px;margin:0;display:flex;align-items:center;gap:8px}
@@ -68,6 +69,16 @@ details{margin:10px 12px}summary{cursor:pointer;color:var(--muted);font-size:12p
 .foot{font-size:10.5px;color:var(--muted);margin-top:8px;line-height:1.5}
 .err{color:var(--red);font-size:12px;margin-top:8px;display:none}
 .tblwrap{overflow-x:auto;max-height:60vh;overflow-y:auto;border-radius:8px}
+#lock{position:fixed;inset:0;z-index:100;background:var(--bg);display:none;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:20px}
+#lock img{width:76px;height:76px;border-radius:20px;margin-bottom:12px}
+#lockTitle{font-size:17px}
+.pindots{display:flex;gap:14px;margin:18px 0}
+.pindots i{width:14px;height:14px;border-radius:50%;border:2px solid var(--muted);display:block}
+.pindots i.f{background:var(--green);border-color:var(--green)}
+.pinpad{display:grid;grid-template-columns:repeat(3,72px);gap:12px;justify-content:center}
+.pinpad button{width:72px;height:72px;border-radius:50%;background:var(--card);border:1px solid var(--border);color:var(--text);font-size:22px;font-weight:600}
+.pinpad button:active{background:var(--blue-bg)}
+#lock.err .pindots i{border-color:var(--red)}
 </style>
 </head>
 <body>
@@ -129,6 +140,7 @@ details{margin:10px 12px}summary{cursor:pointer;color:var(--muted);font-size:12p
  <div class="row" style="margin-top:8px">
   <label class="inl">Account $ <input type="number" id="acct" min="0" step="100"></label>
   <label class="inl">Risk % <input type="number" id="riskPct" min="0.1" max="5" step="0.1" style="width:64px"></label>
+  <button class="ghost" id="pinBtn">PIN lock…</button>
  </div>
 </div></details>
 
@@ -136,6 +148,15 @@ details{margin:10px 12px}summary{cursor:pointer;color:var(--muted);font-size:12p
 Free & open: market data comes directly from Pacifica's public API (candles, prices, orderbook) with Binance public data as fallback; charts are TradingView's free widget. Nothing is sent anywhere — everything runs on this phone. Alerts (sound/vibration) fire while the app is open with auto-rescan on; phones do not allow free background alerts without a server.<br><br>
 This app is educational and informational only — not financial advice. It never places trades and never asks for keys or funds. Trading perpetual futures with leverage can lose more than your stake. Not affiliated with Pacifica or TradingView.
 </div></div></details>
+
+<div id="lock">
+ <img src="icon-192.png" alt="">
+ <b id="lockTitle">Enter PIN</b>
+ <div class="pindots" id="pinDots"><i></i><i></i><i></i><i></i></div>
+ <div class="pinpad" id="pinPad"></div>
+ <div class="sub" id="lockHint" style="margin-top:10px"></div>
+ <div class="sub" id="lockReset" style="margin-top:18px;text-decoration:underline">Forgot PIN? Reset app</div>
+</div>
 
 <div id="detail">
  <div class="row" style="justify-content:space-between">
@@ -358,9 +379,9 @@ function simulate(bars,j,s,maxWait=6){
   if(hitS)return 'l';if(hitT)return 'w'}
  return null}
 function replay(bars,cf,profile,mode){
- const rb=tailBars(bars,160);
+ const rb=tailBars(bars,200);
  const n=rb.c.length,out={},last={};
- for(let j=40;j<=n-3;j++){
+ for(let j=45;j<=n-3;j++){
   const sub=sliceBars(rb,j+1);
   const cfSub=sliceConfByTime(cf,rb.t[j],mode.trigSec,mode.confSec);
   const cands=analyze(sub,cfSub,profile,mode);
@@ -372,13 +393,25 @@ function replay(bars,cf,profile,mode){
 /*LOGIC-END*/
 /* ============ DATA ============ */
 async function jget(url){const r=await fetch(url,{headers:{'Accept':'application/json'}});if(!r.ok)throw new Error('HTTP '+r.status);return r.json()}
-async function jget2(url){try{return await jget(url)}catch(e){await new Promise(r=>setTimeout(r,800));return jget(url)}}
+function sleep(ms){return new Promise(r=>setTimeout(r,ms))}
+let _next=0;
+async function jget2(url){
+ for(let a=0;a<4;a++){
+  const now=Date.now(),wait=Math.max(0,_next-now);_next=Math.max(now,_next)+170;
+  if(wait)await sleep(wait);
+  try{return await jget(url)}
+  catch(e){
+   const m=String(e.message);
+   if(m.includes('429')){await sleep(1800*(a+1));continue}
+   if(a===0&&m.startsWith('HTTP 5')){await sleep(800);continue}
+   throw e}}
+ throw new Error('rate limited - wait a minute and rescan')}
 async function getPrices(){const j=await jget2(API+'/info/prices');if(!j.success||!Array.isArray(j.data))throw new Error('prices unavailable');return j.data}
 async function getMarketInfo(){try{const j=await jget2(API+'/info');if(j.success&&Array.isArray(j.data)){const m={};for(const x of j.data)m[x.symbol]={maxLev:+x.max_leverage||1,type:x.instrument_type};return m}}catch(e){}return{}}
 async function getCandles(sym,tf,sec,bars=250){
  const now=Date.now();
  try{
-  const j=await jget(API+'/kline?symbol='+encodeURIComponent(sym)+'&interval='+tf+'&start_time='+(now-bars*sec*1000)+'&end_time='+now);
+  const j=await jget2(API+'/kline?symbol='+encodeURIComponent(sym)+'&interval='+tf+'&start_time='+(now-bars*sec*1000)+'&end_time='+now);
   if(!j.success||!Array.isArray(j.data)||j.data.length<3)throw new Error('no data');
   let rows=j.data.slice().sort((a,b)=>a.t-b.t);
   if(+rows[rows.length-1].T>now)rows=rows.slice(0,-1);
@@ -421,7 +454,7 @@ async function runScan(){
     if(bad[m.symbol]&&bad[m.symbol]>now){myNoData.push(m.symbol);done++;continue}
     let trig=null,cf=null;
     try{[trig,cf]=await Promise.all([getCandles(m.symbol,mode.trig,mode.trigSec),getCandles(m.symbol,mode.conf,mode.confSec).catch(()=>null)])}
-    catch(e){bad[m.symbol]=now+1800000;myNoData.push(m.symbol);done++;bar.style.width=(2+98*done/total)+'%';continue}
+    catch(e){if(!/429|rate limited/i.test(String(e.message)))bad[m.symbol]=now+1800000;myNoData.push(m.symbol);done++;bar.style.width=(2+98*done/total)+'%';continue}
     if(g!==gen)return;
     try{
      const sigs=analyze(trig,cf,prof,mode);
@@ -467,9 +500,9 @@ function computeSize(r){
  r.size=qty;r.lev=lev}
 function persist(){try{
  const rows=results.map(r=>{const{checks,...rest}=r;return{...rest,checks:checks.map(c=>({b:c.b,label:c.label,pts:c.pts,max:c.max,ok:c.ok}))}});
- localStorage.setItem('petpapp_last',JSON.stringify({ts:Date.now(),rows,noData,agg}))}catch(e){}}
+ localStorage.setItem('petpapp_last',JSON.stringify({v:2,ts:Date.now(),rows,noData,agg}))}catch(e){}}
 function restore(){try{
- const d=JSON.parse(localStorage.getItem('petpapp_last')||'null');if(!d||!d.rows)return false;
+ const d=JSON.parse(localStorage.getItem('petpapp_last')||'null');if(!d||!d.rows||d.v!==2)return false;
  results=d.rows;noData=d.noData||[];agg=d.agg||{w:0,l:0};
  document.getElementById('cTime').textContent=new Date(d.ts).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
  return true}catch(e){return false}}
@@ -541,6 +574,7 @@ function tvSymbol(sym){if(TV_MAP[sym])return TV_MAP[sym];const cs=sym.replace(/^
 function showDetail(ix){
  const r=results[ix];if(!r)return;
  const d=document.getElementById('detail');d.style.display='block';d.scrollTop=0;document.body.style.overflow='hidden';
+ try{if(!(history.state&&history.state.petpDetail))history.pushState({petpDetail:1},'')}catch(e){}
  document.getElementById('dTitle').textContent=r.sym+' — '+r.setup+' ('+r.dir.toUpperCase()+')';
  document.getElementById('dSub').textContent=MODES[S.mode].label+' · '+r.tf+'/'+r.ctf+' (bias '+r.bias+') · ATR '+r.atrPct.toFixed(2)+'% · ADX '+(r.adx!=null?r.adx.toFixed(0):'–')+' · RSI '+(r.rsiV!=null?r.rsiV.toFixed(0):'–')+' · fund/yr '+r.fundAnn.toFixed(1)+'%'+(r.src==='binance'?' · candles: Binance fallback':'');
  document.getElementById('dLvls').innerHTML=
@@ -557,11 +591,12 @@ function showDetail(ix){
   for(const k of r.checks.filter(x=>x.b===b))ch+='<div class="'+(k.ok?'ok':'no')+'">'+(k.ok?'✓':'✗')+' '+k.label+' <span class="muted">('+k.pts+'/'+k.max+')</span></div>'}
  document.getElementById('dChecks').innerHTML=ch;
  loadBook(r);loadTV(r)}
-function closeDetail(){document.getElementById('detail').style.display='none';document.body.style.overflow=''}
+function hideDetail(){document.getElementById('detail').style.display='none';document.body.style.overflow=''}
+function closeDetail(){if(history.state&&history.state.petpDetail)history.back();else hideDetail()}
 async function loadBook(r){
  const el=document.getElementById('dOb');el.textContent='Loading orderbook…';
  try{
-  const j=await jget(API+'/book?symbol='+encodeURIComponent(r.sym));
+  const j=await jget2(API+'/book?symbol='+encodeURIComponent(r.sym));
   const bids=(j.data.l&&j.data.l[0])||[],asks=(j.data.l&&j.data.l[1])||[];
   const b=bids.slice(0,10).reduce((s,x)=>s+ +x.a,0),a=asks.slice(0,10).reduce((s,x)=>s+ +x.a,0);
   if(b+a<=0){el.textContent='Orderbook empty.';return}
@@ -582,6 +617,55 @@ function loadTV(r){
  s.text=JSON.stringify({autosize:true,symbol:sym,interval:MODES[S.mode].tvi,timezone:'Etc/UTC',theme:'dark',style:'1',locale:'en',allow_symbol_change:true,withdateranges:true,hide_side_toolbar:true,studies:['STD;RSI','STD;MACD'],support_host:'https://www.tradingview.com'});
  div.appendChild(s);
  wrap.appendChild(div)}
+/* ============ PIN LOCK ============ */
+const PINKEY='petpapp_pin';
+let pinBuf='',lockMode='verify',lockNext=null,pinFirst='',hiddenAt=0;
+function pinActive(){const p=localStorage.getItem(PINKEY);return !!p&&p!=='off'}
+async function pinHash(p){try{const d=await crypto.subtle.digest('SHA-256',new TextEncoder().encode('petp:'+p));return Array.from(new Uint8Array(d)).map(b=>b.toString(16).padStart(2,'0')).join('')}catch(e){let h=7;const s='petp:'+p;for(let i=0;i<s.length;i++)h=(h*31+s.charCodeAt(i))>>>0;return 'x'+h}}
+function lockDots(){document.querySelectorAll('#pinDots i').forEach((d,i)=>d.classList.toggle('f',i<pinBuf.length))}
+function lockShow(mode){lockMode=mode;pinBuf='';lockDots();
+ const t=document.getElementById('lockTitle'),h=document.getElementById('lockHint');
+ if(mode==='setup1'){t.textContent='Create a 4-digit PIN';h.textContent='Locks the app on this phone.'}
+ else if(mode==='setup2'){t.textContent='Repeat the PIN';h.textContent=''}
+ else{t.textContent='Enter PIN';h.textContent=''}
+ document.getElementById('lockReset').style.display=mode==='verify'?'block':'none';
+ const el=document.getElementById('lock');el.classList.remove('err');el.style.display='flex'}
+function lockHide(){document.getElementById('lock').style.display='none'}
+async function pinDigit(d){
+ if(d==='<'){pinBuf=pinBuf.slice(0,-1);lockDots();return}
+ if(pinBuf.length>=4)return;
+ pinBuf+=d;lockDots();
+ if(pinBuf.length<4)return;
+ const entered=pinBuf;
+ if(lockMode==='setup1'){pinFirst=entered;setTimeout(()=>lockShow('setup2'),150);return}
+ if(lockMode==='setup2'){
+  if(entered===pinFirst){localStorage.setItem(PINKEY,await pinHash(entered));lockHide()}
+  else{document.getElementById('lock').classList.add('err');document.getElementById('lockHint').textContent='Did not match — start again';setTimeout(()=>lockShow('setup1'),900)}
+  return}
+ if(await pinHash(entered)===localStorage.getItem(PINKEY)){
+  lockHide();
+  if(lockNext==='remove')localStorage.setItem(PINKEY,'off');
+  else if(lockNext==='change')lockShow('setup1');
+  lockNext=null}
+ else{const el=document.getElementById('lock');el.classList.add('err');document.getElementById('lockHint').textContent='Wrong PIN';
+  setTimeout(()=>{el.classList.remove('err');pinBuf='';lockDots();document.getElementById('lockHint').textContent=''},700)}}
+function lockInit(){
+ const pad=document.getElementById('pinPad');
+ for(const k of['1','2','3','4','5','6','7','8','9','','0','<']){
+  const b=document.createElement('button');b.textContent=k==='<'?'⌫':k;
+  if(k==='')b.style.visibility='hidden';else b.onclick=()=>pinDigit(k);
+  pad.appendChild(b)}
+ document.getElementById('lockReset').onclick=()=>{if(confirm('Reset the app? This clears your PIN and settings. No money or accounts are involved.')){localStorage.clear();location.reload()}};
+ document.getElementById('pinBtn').onclick=()=>{
+  if(!pinActive())lockShow('setup1');
+  else{lockNext=confirm('OK = remove PIN. Cancel = change PIN.')?'remove':'change';lockShow('verify')}};
+ const stored=localStorage.getItem(PINKEY);
+ if(stored===null)lockShow('setup1');
+ else if(stored!=='off')lockShow('verify');
+ document.addEventListener('visibilitychange',()=>{
+  if(document.visibilityState==='hidden')hiddenAt=Date.now();
+  else if(pinActive()&&hiddenAt&&Date.now()-hiddenAt>300000)lockShow('verify')})}
+
 /* ============ UI WIRING ============ */
 function seg(id,obj,cur,cb){const el=document.getElementById(id);el.innerHTML='';
  for(const k of Object.keys(obj)){const b=document.createElement('button');b.textContent=obj[k].label;
@@ -627,7 +711,9 @@ function init(){
  if(S.auto>0)setAuto(S.auto);
  document.querySelectorAll('#sigTable th').forEach(th=>th.onclick=()=>{const k=th.dataset.k;
   if(sortK===k)sortAsc=!sortAsc;else{sortK=k;sortAsc=false}render()});
+ lockInit();
  if(restore()){results.forEach(computeSize);prevStrong=strongKeys();render()}
+ window.addEventListener('popstate',()=>{if(document.getElementById('detail').style.display==='block')hideDetail()});
  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&Date.now()-(window._lastScanTs||0)>120000)runScan()});
  if('serviceWorker' in navigator&&location.protocol.startsWith('http')){try{navigator.serviceWorker.register('sw.js')}catch(e){}}
  runScan()}
