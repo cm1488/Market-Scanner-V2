@@ -202,6 +202,7 @@ details{margin:10px 12px}summary{cursor:pointer;color:var(--muted);font-size:12p
 <div class="card">
  <b style="font-size:14px">📊 Scoreboard <span class="sub">· automatic record of STRONG signals</span></b>
  <div id="sbBox" style="margin-top:8px" class="foot"></div>
+ <button class="ghost" id="wkBtn" style="margin-top:8px">📤 Weekly review</button>
 </div>
 <div class="card">
  <b style="font-size:14px">🔔 Price alerts</b>
@@ -1152,7 +1153,7 @@ function sbUpdate(){
   const key=r.sym+'|'+r.setup+'|'+r.dir;
   if(SB.open.some(x=>x.key===key))continue;
   if(SB.closed.some(x=>x.key===key&&now-x.closedTs<86400000))continue;
-  SB.open.push({key,sym:r.sym,setup:r.setup,dir:r.dir,mode:S.mode,profile:S.profile,entry:r.entry,stop:r.stop,target:r.target,tf:r.tf,ts:now,st:'pending'});
+  SB.open.push({key,sym:r.sym,setup:r.setup,dir:r.dir,score:r.score,mode:S.mode,profile:S.profile,entry:r.entry,stop:r.stop,target:r.target,tf:r.tf,ts:now,st:'pending'});
   if(SB.open.length>40)SB.open.shift()}
  const keep=[];
  for(const t of SB.open){const p=priceMap[t.sym];
@@ -1161,6 +1162,7 @@ function sbUpdate(){
   if(p==null){if(ageH<maxLive)keep.push(t);continue}
   const long=t.dir==='long';
   if(t.st==='pending'){
+   if(long?p>=t.target:p<=t.target){bumpMiss();continue}
    if(long?p>=t.entry:p<=t.entry)t.st='filled';
    else if(long?p<=t.stop:p>=t.stop)continue;
    else if(ageH>maxPend)continue}
@@ -1172,17 +1174,56 @@ function sbUpdate(){
  SB.open=keep;
  if(SB.closed.length>400)SB.closed=SB.closed.slice(-400);
  sbSave();renderSB()}
+function bumpMiss(){try{localStorage.setItem('petpapp_miss',String(+(localStorage.getItem('petpapp_miss')||0)+1))}catch(e){}}
+function missCount(){try{return +(localStorage.getItem('petpapp_miss')||0)}catch(e){return 0}}
 function renderSB(){
  const el=document.getElementById('sbBox');if(!el)return;
  const n=SB.closed.length;
- if(!n&&!SB.open.length){el.innerHTML='Tracks every STRONG signal automatically and records whether target or stop hit first. Your real win-rate record builds here over days and weeks — no effort needed.';return}
  let html='';
- if(n){const w=SB.closed.filter(x=>x.res==='w').length;
-  html+='<b style="font-size:14px;color:var(--text)">'+w+'W – '+(n-w)+'L ('+Math.round(100*w/n)+'% win)</b> overall<br>';
-  const by={};for(const x of SB.closed){const k=(x.mode||'?')+'/'+(x.profile||'?');by[k]=by[k]||{w:0,l:0};by[k][x.res==='w'?'w':'l']++}
-  html+=Object.keys(by).map(k=>{const a=by[k],m=a.w+a.l;return k+': <b>'+a.w+'-'+a.l+'</b> ('+Math.round(100*a.w/m)+'%)'}).join(' · ')+'<br>'}
- html+='<span class="muted">'+SB.open.length+' signal'+(SB.open.length===1?'':'s')+' tracked now. Outcomes checked at scan times — wicks between scans can be missed.</span>';
+ if(!n&&!SB.open.length)html='Tracks every STRONG signal automatically and records whether target or stop hit first. Your real win-rate record builds here over days and weeks — no effort needed.';
+ else{
+  if(n){const w=SB.closed.filter(x=>x.res==='w').length;
+   html+='<b style="font-size:14px;color:var(--text)">'+w+'W – '+(n-w)+'L ('+Math.round(100*w/n)+'% win)</b> overall<br>';
+   const by={};for(const x of SB.closed){const k=(x.mode||'?')+'/'+(x.profile||'?');by[k]=by[k]||{w:0,l:0};by[k][x.res==='w'?'w':'l']++}
+   html+=Object.keys(by).map(k=>{const a=by[k],m=a.w+a.l;return k+': <b>'+a.w+'-'+a.l+'</b> ('+Math.round(100*a.w/m)+'%)'}).join(' · ')+'<br>';
+   const bands={'55-64':[55,65],'65-74':[65,75],'75+':[75,101]};const bs=[];
+   for(const bn in bands){const lo=bands[bn][0],hi=bands[bn][1];
+    const arr=SB.closed.filter(x=>x.score!=null&&x.score>=lo&&x.score<hi);
+    if(arr.length>=5){const bw=arr.filter(x=>x.res==='w').length;bs.push('score '+bn+': '+Math.round(100*bw/arr.length)+'% ('+arr.length+')')}}
+   if(bs.length)html+='<span class="sub">Calibration — '+bs.join(' · ')+' (higher bands should win more; if not, tell me)</span><br>'}
+  html+='<span class="muted">'+SB.open.length+' tracked now · outcomes checked at scan times, wicks between scans can be missed.</span>'}
+ const mc=missCount();
+ if(mc)html+='<br><span class="sub">Missed fills: '+mc+(n&&mc/(mc+n)>0.25?' — entries may be too conservative':'')+'</span>';
+ let sl=null;try{sl=JSON.parse(localStorage.getItem('petpapp_slip')||'null')}catch(e){}
+ if(sl&&sl.n)html+='<br><span class="sub">Avg slippage: '+(sl.sum/sl.n).toFixed(3)+'% over '+sl.n+' logged fills</span>';
+ const tp=todayPnl();
+ if(tp)html+='<br><span class="sub">Today logged P/L: <b class="'+(tp>=0?'pnl-p':'pnl-n')+'">'+(tp>=0?'+':'')+tp.toFixed(0)+'$</b></span>';
  el.innerHTML=html}
+function weeklyDigest(){
+ const wk=Date.now()-7*86400000;
+ const cl=SB.closed.filter(x=>x.closedTs>=wk);
+ const w=cl.filter(x=>x.res==='w').length;
+ const by={};for(const x of cl){const k=(x.mode||'?')+'/'+(x.profile||'?');by[k]=by[k]||{w:0,l:0};by[k][x.res==='w'?'w':'l']++}
+ const bySet={};for(const x of cl){bySet[x.setup]=bySet[x.setup]||{w:0,l:0};bySet[x.setup][x.res==='w'?'w':'l']++}
+ let sl=null;try{sl=JSON.parse(localStorage.getItem('petpapp_slip')||'null')}catch(e){}
+ const txt=['PETP v.420 — weekly review',
+  'Signals resolved (7d): '+cl.length+(cl.length?' · '+w+'W-'+(cl.length-w)+'L ('+Math.round(100*w/cl.length)+'% win)':''),
+  'By mode: '+(Object.keys(by).map(k=>k+' '+by[k].w+'-'+by[k].l).join(' · ')||'—'),
+  'By setup: '+(Object.keys(bySet).map(k=>k+' '+bySet[k].w+'-'+bySet[k].l).join(' · ')||'—'),
+  'Missed fills (all-time): '+missCount(),
+  sl&&sl.n?'Avg slippage: '+(sl.sum/sl.n).toFixed(3)+'% over '+sl.n+' fills':'No slippage logged',
+  'Today logged P/L: '+todayPnl().toFixed(0)+'$',
+  'Not financial advice. Protect the downside.'].join('\n');
+ if(navigator.share){navigator.share({text:txt}).catch(()=>{})}
+ else if(navigator.clipboard){navigator.clipboard.writeText(txt).then(()=>alert('Weekly review copied — paste anywhere.')).catch(()=>alert(txt))}
+ else alert(txt)}
+let prevFavWatch=new Set();
+function favRipenCheck(){
+ const th=PROFILES[S.profile].threshold;
+ const cur=new Set(results.filter(r=>S.favs.includes(r.sym)&&r.score>=th-10&&r.score<th).map(r=>r.sym+'|'+r.setup+'|'+r.dir));
+ if(S.alerts)for(const k of cur)if(!prevFavWatch.has(k)){
+  beep();setStatus('🌱 ripening: '+k.split('|')[0]+' is close to STRONG','var(--amber)');break}
+ prevFavWatch=cur}
 
 /* ---- price alerts ---- */
 let AL=[];try{AL=JSON.parse(localStorage.getItem('petpapp_alerts')||'[]')}catch(e){}
@@ -1228,6 +1269,11 @@ function postScan(all,aggT){
  try{localStorage.setItem('petpapp_mk',JSON.stringify(MK))}catch(e){}
  renderHeat(all);renderSent(all);renderFavs();renderTrades();renderStats(aggT);
  sbUpdate();alertsCheck();econCheck();renderAlerts();
+ invalidationCheck();favRipenCheck();dayCheck();
+ const reg=btcRegime();
+ document.getElementById('btcReg').innerHTML='₿ regime: '+(reg==='long'?'<span class="up">▲ up — longs favored</span>':reg==='short'?'<span class="dn">▼ down — careful with longs</span>':'<span class="muted">neutral</span>');
+ document.getElementById('sessLbl').textContent='Session: '+sessionInfo().l;
+ enrichTF2();
  pushHist(results.filter(r=>r.score>=PROFILES[S.profile].threshold).length,all.length);
  const rrs=results.map(r=>r.rr);
  document.getElementById('avgRR').textContent=rrs.length?('avg R:R 1:'+(rrs.reduce((s,x)=>s+x,0)/rrs.length).toFixed(1)):'avg R:R —';
@@ -1347,7 +1393,11 @@ function init(){
  document.getElementById('hq').oninput=e=>{_hq=e.target.value.trim().toUpperCase();renderHeat()};
  renderFavs();renderTrades();renderHist();
  fetchNews();setInterval(fetchNews,1200000);
- renderSB();renderAlerts();econCheck();
+ renderSB();renderAlerts();econCheck();dayCheck();
+ document.getElementById('wkBtn').onclick=weeklyDigest;
+ document.getElementById('feePct').onchange=()=>{saveSettings();results.forEach(r=>{r.rrNet=netRR(r.entry,r.stop,r.target)});render()};
+ document.getElementById('dayLoss').onchange=()=>{saveSettings();dayCheck()};
+ document.getElementById('ckList').onchange=saveSettings;
  if(restore()){results.forEach(computeSize);prevStrong=strongKeys();render()}
  window.addEventListener('popstate',()=>{if(document.getElementById('detail').style.display==='block')hideDetail()});
  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&Date.now()-(window._lastScanTs||0)>120000)runScan()});
