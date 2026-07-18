@@ -159,11 +159,13 @@ button:focus-visible,.tag:focus-visible,.seg button:focus-visible,a:focus-visibl
 #armModal input{width:100%;background:var(--card2);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:9px;font:inherit;font-size:15px}
 body:not(.scanning) .smoke{opacity:0!important;animation:none!important}
 body:not(.scanning) .smkp{opacity:0!important;animation:none!important}
-body:not(.scanning) .ember{animation:none!important;opacity:.14!important}
+body:not(.scanning) .smk0,body:not(.scanning) .s0,body:not(.scanning) .s1,body:not(.scanning) .s2,body:not(.scanning) .s3{opacity:0!important;animation:none!important}
+body:not(.scanning) .ember{animation:none!important;opacity:0!important}
 body.scanning .ember{opacity:1}
-#logo{transform-origin:86px 18px}
+#logo{transform-origin:86px 19px}
+body.boom .ember{opacity:1!important;animation:none!important}
 body.boom .smoke,body.boom .smkp{opacity:0!important}
-body.boom #logo{animation:boom .82s ease-out}
+body.boom #logo{animation:boom .85s ease-out!important}
 @keyframes boom{0%{transform:scale(1) rotate(0);filter:none}18%{transform:scale(1.5) rotate(-7deg);filter:brightness(2.4) saturate(2)}42%{transform:scale(1.75) rotate(6deg);filter:brightness(3)}100%{transform:scale(.15) rotate(24deg);opacity:0;filter:brightness(.4)}}
 </style>
 </head>
@@ -807,7 +809,7 @@ async function runScan(){
  }catch(e){if(g===gen){const el=document.getElementById('err');el.style.display='block';el.textContent='Scan error: '+e.message;setStatus('error','var(--red)');boomDoobie()}}
  if(g===gen){prog.style.display='none';btn.textContent='Scan';render();try{document.body.classList.remove('scanning');}catch(e){}}}
 
-function setStatus(txt,col){document.getElementById('statusLine').textContent=txt;document.getElementById('statusDot').style.background=col}
+function setStatus(txt,col){document.getElementById('statusLine').textContent=txt;document.getElementById('statusDot').style.background=col;if(col==='var(--red)'){try{boomDoobie()}catch(e){}}}
 function computeSize(r){
  const risk=Math.abs(r.entry-r.stop);
  if(risk<=0||!S.acct){r.size=0;r.lev=0;r.levCap=false;return}
@@ -2030,7 +2032,7 @@ function _armSubmit(){var pi=document.getElementById('armPass');_armResolve(pi?p
 var PETPLOG=[];
 function logLine(t){try{PETPLOG.push(new Date().toISOString().slice(11,23)+' '+t);if(PETPLOG.length>600)PETPLOG=PETPLOG.slice(-600);}catch(e){}}
 function downloadLogs(){try{var a=document.createElement('a');a.href=URL.createObjectURL(new Blob([PETPLOG.join(String.fromCharCode(10))||'no errors logged this session'],{type:'text/plain'}));a.download='petp-debug-log.txt';a.click();}catch(e){}}
-try{window.addEventListener('error',function(e){logLine('ERR '+((e&&e.message)||(e&&e.error)||e));try{boomDoobie()}catch(_e){}});window.addEventListener('unhandledrejection',function(e){logLine('REJ '+((e&&e.reason&&e.reason.message)||(e&&e.reason)||''));});}catch(e){}
+try{window.addEventListener('error',function(e){logLine('ERR '+((e&&e.message)||(e&&e.error)||e));try{boomDoobie()}catch(_e){}});window.addEventListener('unhandledrejection',function(e){logLine('REJ '+((e&&e.reason&&e.reason.message)||(e&&e.reason)||''));try{boomDoobie()}catch(_e){}});}catch(e){}
 
 /* ===== audit hardening: escaping, wallet + import validation, passphrase strength ===== */
 function escHtml(x){return String(x==null?'':x).replace(/[&<>"']/g,function(c){return({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c];});}
