@@ -476,6 +476,7 @@ This app is educational and informational only — not financial advice. It neve
 
 <script>
 /* ============ CONFIG ============ */
+var APP_VER='20260718e';(function(){try{if('serviceWorker' in navigator){navigator.serviceWorker.getRegistrations().then(function(rs){rs.forEach(function(r){try{r.update()}catch(e){}})}).catch(function(){});}var seen=null;try{seen=localStorage.getItem('petp_ver')}catch(e){}if(seen!==APP_VER){try{localStorage.setItem('petp_ver',APP_VER)}catch(e){}if(window.caches&&caches.keys){caches.keys().then(function(ks){ks.forEach(function(k){try{caches.delete(k)}catch(e){}})}).catch(function(){});}if('serviceWorker' in navigator){navigator.serviceWorker.getRegistrations().then(function(rs){var had=rs.length;rs.forEach(function(r){try{r.unregister()}catch(e){}});if(had){setTimeout(function(){try{location.reload()}catch(e){}},400);}}).catch(function(){});}}}catch(e){}})();
 let API='https://api.pacifica.fi/api/v1';
 function setNet(n){S.net=(n==='test')?'test':'main';API=S.net==='test'?'https://test-api.pacifica.fi/api/v1':'https://api.pacifica.fi/api/v1';AGENT=null;ARMED=false;}
 const MODES={
@@ -739,7 +740,7 @@ function badSet(m){try{localStorage.setItem('petpapp_bad',JSON.stringify(m))}cat
 async function runScan(){
  const g=++gen;saveSettings();
  const btn=document.getElementById('scanBtn');btn.textContent='…';
- setStatus('scanning','var(--amber)');try{document.body.classList.add('scanning');document.body.classList.remove('boom');}catch(e){}
+ setStatus('scanning','var(--amber)');try{document.body.classList.add('scanning');document.body.classList.remove('boom');setDoob(true);}catch(e){}
  document.getElementById('err').style.display='none';
  const prog=document.getElementById('prog'),bar=document.getElementById('progBar');prog.style.display='block';bar.style.width='2%';
  const myResults=[],myNoData=[];let gw=0,gl=0,done=0;const aggT={};
@@ -807,7 +808,7 @@ async function runScan(){
   const nb=myResults.filter(r=>r.src==='binance').length;
   setStatus('live · Pacifica'+(nb?' +Binance fallback':''),'var(--green)');
  }catch(e){if(g===gen){const el=document.getElementById('err');el.style.display='block';el.textContent='Scan error: '+e.message;setStatus('error','var(--red)');boomDoobie()}}
- if(g===gen){prog.style.display='none';btn.textContent='Scan';render();try{document.body.classList.remove('scanning');}catch(e){}}}
+ if(g===gen){prog.style.display='none';btn.textContent='Scan';render();try{document.body.classList.remove('scanning');setDoob(false);}catch(e){}}}
 
 function setStatus(txt,col){document.getElementById('statusLine').textContent=txt;document.getElementById('statusDot').style.background=col;if(col==='var(--red)'){try{boomDoobie()}catch(e){}}}
 function computeSize(r){
@@ -2104,6 +2105,7 @@ function setupLearnHtml(){
  return '<div style="margin-top:10px"><b style="font-size:13px;color:var(--text)">Which setups actually win</b> <span class="sub">&mdash; learns from every scan</span>'+rows+'<div class="sub" style="margin-top:2px">Win% of real resolved STRONG signals per setup. Favor the green ones; be careful with red. The more scans, the smarter this gets.</div></div>';
 }
 function boomDoobie(){try{if(!document||!document.body)return;document.body.classList.add('boom');setTimeout(function(){try{document.body.classList.remove('boom');}catch(e){}},850);}catch(e){}}
+function setDoob(on){try{var sm=document.querySelectorAll('.smoke,.smkp');for(var i=0;i<sm.length;i++){sm[i].style.animationPlayState=on?'running':'paused';sm[i].style.opacity=on?'':'0';}var em=document.querySelectorAll('.ember');for(var j=0;j<em.length;j++){em[j].style.animationPlayState=on?'running':'paused';em[j].style.opacity=on?'1':'0';}}catch(e){}}
 
 /* ===== robust close+log: finalize a trade the instant it closes ===== */
 var _editEntry=null;
@@ -2221,6 +2223,7 @@ function setAlerts(on){S.alerts=on;
   if(!S.auto){S.auto=300;document.getElementById('autoSel').value='300';setAuto(300)}}
  saveSettings()}
 function init(){
+ try{setDoob(false)}catch(e){}
  seg('modeSeg',MODES,S.mode,k=>{S.mode=k;saveSettings();runScan()});
  seg('profSeg',PROFILES,S.profile,k=>{S.profile=k;saveSettings();runScan()});
  document.getElementById('minScore').value=S.minScore==null?'':S.minScore;
