@@ -374,7 +374,7 @@ These tabs change <b>the standards a setup must pass</b>. The indicators are the
  </div>
  <div class="row" style="margin-top:8px">
   <label class="inl">Pacifica wallet <input type="text" id="wallet" placeholder="wallet address" style="width:150px"></label>
-  <label class="inl">Account $ <input type="number" id="acct" min="0" step="100"></label>
+  <label class="inl">Account $ <input type="number" id="acct" min="0" step="100"></label><button class="ghost" id="acctSync" title="Set Account $ to your live Pacifica equity">⟳ Sync from live</button>
   <label class="inl">Risk % <input type="number" id="riskPct" min="0.1" max="5" step="0.1" style="width:64px"></label>
   <label class="inl">Fee %/side <input type="number" id="feePct" min="0" max="1" step="0.01" style="width:64px"></label>
   <label class="inl">Daily loss limit $ <input type="number" id="dayLoss" min="0" step="50"></label>
@@ -476,7 +476,7 @@ This app is educational and informational only — not financial advice. It neve
 
 <script>
 /* ============ CONFIG ============ */
-var APP_VER='20260718h';(function(){try{if('serviceWorker' in navigator){navigator.serviceWorker.getRegistrations().then(function(rs){rs.forEach(function(r){try{r.update()}catch(e){}})}).catch(function(){});}var seen=null;try{seen=localStorage.getItem('petp_ver')}catch(e){}if(seen!==APP_VER){try{localStorage.setItem('petp_ver',APP_VER)}catch(e){}if(window.caches&&caches.keys){caches.keys().then(function(ks){ks.forEach(function(k){try{caches.delete(k)}catch(e){}})}).catch(function(){});}if('serviceWorker' in navigator){navigator.serviceWorker.getRegistrations().then(function(rs){var had=rs.length;rs.forEach(function(r){try{r.unregister()}catch(e){}});if(had){setTimeout(function(){try{location.reload()}catch(e){}},400);}}).catch(function(){});}}}catch(e){}})();
+var APP_VER='20260718j';(function(){try{if('serviceWorker' in navigator){navigator.serviceWorker.getRegistrations().then(function(rs){rs.forEach(function(r){try{r.update()}catch(e){}})}).catch(function(){});}var seen=null;try{seen=localStorage.getItem('petp_ver')}catch(e){}if(seen!==APP_VER){try{localStorage.setItem('petp_ver',APP_VER)}catch(e){}if(window.caches&&caches.keys){caches.keys().then(function(ks){ks.forEach(function(k){try{caches.delete(k)}catch(e){}})}).catch(function(){});}if('serviceWorker' in navigator){navigator.serviceWorker.getRegistrations().then(function(rs){var had=rs.length;rs.forEach(function(r){try{r.unregister()}catch(e){}});if(had){setTimeout(function(){try{location.reload()}catch(e){}},400);}}).catch(function(){});}}}catch(e){}})();
 let API='https://api.pacifica.fi/api/v1';
 function setNet(n){S.net=(n==='test')?'test':'main';API=S.net==='test'?'https://test-api.pacifica.fi/api/v1':'https://api.pacifica.fi/api/v1';AGENT=null;ARMED=false;}
 const MODES={
@@ -1693,7 +1693,7 @@ async function renderLiveAccount(){
    return{sym:symSafe(p.symbol),long,amt,entry,mk,upnl,liq:p.liquidation_price,funding:+p.funding||0}});
   try{for(var _i=0;_i<TR.open.length;_i++){var _t=TR.open[_i];if(!_t.live)continue;var _lng=_t.dir==='long';var _pos=ps.find(function(p){return p.symbol===_t.sym&&((p.side==='bid')===_lng);});if(_pos){if(!_t.fill)_t.fill=+_pos.entry_price;if(+_pos.amount)_t.qty=+_pos.amount;}}saveTR();}catch(e){}
   const eq=+a.account_equity,bal=+a.balance,avail=+a.available_to_spend,mm=+a.total_margin_used;LIVEACCT={equity:eq,available:avail,ts:Date.now()};
-  if(eq>0&&Math.round(eq)!==S.acct){S.acct=Math.round(eq);var _ai=document.getElementById('acct');if(_ai)_ai.value=S.acct;try{localStorage.setItem('petpapp_settings',JSON.stringify(S));results.forEach(computeSize);render();renderRisk();}catch(e){}}
+  var _eq2=Math.round(eq*100)/100;if(eq>0&&Math.abs(_eq2-(+S.acct||0))>=0.01){S.acct=_eq2;var _ai=document.getElementById('acct');if(_ai)_ai.value=_eq2;try{localStorage.setItem('petpapp_settings',JSON.stringify(S));results.forEach(computeSize);render();renderRisk();}catch(e){}}
   let html='<div class="rgrid">'+
    '<div class="rbox"><b>$'+fmt(eq)+'</b><span>account equity</span></div>'+
    '<div class="rbox"><b>$'+fmt(bal)+'</b><span>balance</span></div>'+
@@ -2176,6 +2176,25 @@ async function reconcileOpenTrades(){
  }catch(e){}
 }
 
+/* ===== guaranteed Account $ <- live Pacifica equity ===== */
+async function syncAcctNow(){
+ var addr=((S.wallet||'')+'').trim();
+ if(!validWallet(addr)){alert('Add a valid Pacifica wallet address in Settings first.');return;}
+ try{
+  var acc=await jget2(API+'/account?account='+encodeURIComponent(addr));
+  if(acc&&acc.success&&acc.data){
+   var eq=Math.round((+acc.data.account_equity)*100)/100;
+   if(eq>0){
+    S.acct=eq;var _ai=document.getElementById('acct');if(_ai)_ai.value=eq;
+    try{localStorage.setItem('petpapp_settings',JSON.stringify(S));}catch(e){}
+    try{results.forEach(computeSize);}catch(e){}
+    try{render();renderRisk();}catch(e){}
+    setStatus('Account $ synced from Pacifica: $'+eq,'var(--green)');
+   }else{alert('Account equity reads $0 — deposit funds or check the wallet/network.');}
+  }else{alert('Could not read your Pacifica account. Check the wallet address and network (mainnet/testnet).');}
+ }catch(e){alert('Sync failed: '+e.message);}
+}
+
 /* ============ PIN LOCK ============ */
 const PINKEY='petpapp_pin';
 let pinBuf='',lockMode='verify',lockNext=null,pinFirst='',hiddenAt=0;
@@ -2300,7 +2319,7 @@ function init(){
  document.getElementById('ckList').onchange=saveSettings;
  if(restore()){results.forEach(computeSize);prevStrong=strongKeys();render()}
  document.getElementById('jReport').onclick=journalReport;document.getElementById('jCsv').onclick=exportJournal;
- document.getElementById('liveRefresh').onclick=renderLiveAccount;document.getElementById('wallet').onchange=()=>{saveSettings();renderLiveAccount()};document.getElementById('maxHeat').onchange=()=>{saveSettings();renderRisk()};
+ document.getElementById('liveRefresh').onclick=renderLiveAccount;document.getElementById('wallet').onchange=()=>{saveSettings();renderLiveAccount();syncAcctNow();};var _as=document.getElementById('acctSync');if(_as)_as.onclick=syncAcctNow;document.getElementById('maxHeat').onchange=()=>{saveSettings();renderRisk()};
  setNet(S.net||'main');(function(){var seg=document.getElementById('netSeg');if(seg){var bs=seg.querySelectorAll('button');for(var i=0;i<bs.length;i++){(function(b){b.classList.toggle('on',b.dataset.n===(S.net||'main'));b.onclick=function(){setNet(b.dataset.n);saveSettings();var xs=seg.querySelectorAll('button');for(var k=0;k<xs.length;k++)xs[k].classList.toggle('on',xs[k].dataset.n===S.net);var nl=document.getElementById('netLabel');if(nl)nl.textContent=(S.net==='test')?'test-api.pacifica.fi':'';renderTradeStatus();runScan();setTimeout(renderLiveAccount,300);};})(bs[i]);}var nl0=document.getElementById('netLabel');if(nl0)nl0.textContent=(S.net==='test')?'test-api.pacifica.fi':'';}})();renderVerdict();renderRisk();renderJournal();renderLiveAccount();renderTradeStatus();document.getElementById('saveAgent').onclick=async()=>{try{await saveAgentKey(document.getElementById('agentKey').value,document.getElementById('agentPass').value);document.getElementById('agentKey').value='';document.getElementById('agentPass').value='';setStatus('agent key saved & armed','var(--green)')}catch(e){alert(e.message)}};var _nt=document.getElementById('newsToggle');if(_nt){_nt.checked=(S.news!==false);_nt.onchange=function(){S.news=_nt.checked;saveSettings();fetchNews();};}
  (function(){var _dl=document.getElementById('dlLog');if(_dl)_dl.onclick=downloadLogs;var _ap=document.getElementById('agentPass');if(_ap)_ap.oninput=function(){var h=document.getElementById('pwHint');if(h)h.textContent=_ap.value?('strength: '+pwStrength(_ap.value)):'';};var cl=document.getElementById('chLoad');if(cl)cl.onclick=loadChartGrid;var cc=document.getElementById('chCompat');if(cc){cc.checked=!!S.chartsCompat;cc.onchange=function(){S.chartsCompat=cc.checked;saveSettings();var g=document.getElementById('chGrid');if(g&&g.style.display!=='none')loadChartGrid();};}var fc=document.getElementById('fsClose');if(fc)fc.onclick=closeFullChart;var fg=document.getElementById('fsGo');if(fg)fg.onclick=function(){var v=(document.getElementById('fsSym').value||'').trim().toUpperCase();if(v)openFullChart(v);};document.addEventListener('keydown',function(e){if(e.key==='Escape'){var o=document.getElementById('chartFS');if(o&&o.style.display==='flex')closeFullChart();}});})();
  window.addEventListener('popstate',()=>{if(document.getElementById('detail').style.display==='block')hideDetail()});
