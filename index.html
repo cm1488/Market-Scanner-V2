@@ -476,7 +476,7 @@ This app is educational and informational only — not financial advice. It neve
 
 <script>
 /* ============ CONFIG ============ */
-var APP_VER='20260718g';(function(){try{if('serviceWorker' in navigator){navigator.serviceWorker.getRegistrations().then(function(rs){rs.forEach(function(r){try{r.update()}catch(e){}})}).catch(function(){});}var seen=null;try{seen=localStorage.getItem('petp_ver')}catch(e){}if(seen!==APP_VER){try{localStorage.setItem('petp_ver',APP_VER)}catch(e){}if(window.caches&&caches.keys){caches.keys().then(function(ks){ks.forEach(function(k){try{caches.delete(k)}catch(e){}})}).catch(function(){});}if('serviceWorker' in navigator){navigator.serviceWorker.getRegistrations().then(function(rs){var had=rs.length;rs.forEach(function(r){try{r.unregister()}catch(e){}});if(had){setTimeout(function(){try{location.reload()}catch(e){}},400);}}).catch(function(){});}}}catch(e){}})();
+var APP_VER='20260718h';(function(){try{if('serviceWorker' in navigator){navigator.serviceWorker.getRegistrations().then(function(rs){rs.forEach(function(r){try{r.update()}catch(e){}})}).catch(function(){});}var seen=null;try{seen=localStorage.getItem('petp_ver')}catch(e){}if(seen!==APP_VER){try{localStorage.setItem('petp_ver',APP_VER)}catch(e){}if(window.caches&&caches.keys){caches.keys().then(function(ks){ks.forEach(function(k){try{caches.delete(k)}catch(e){}})}).catch(function(){});}if('serviceWorker' in navigator){navigator.serviceWorker.getRegistrations().then(function(rs){var had=rs.length;rs.forEach(function(r){try{r.unregister()}catch(e){}});if(had){setTimeout(function(){try{location.reload()}catch(e){}},400);}}).catch(function(){});}}}catch(e){}})();
 let API='https://api.pacifica.fi/api/v1';
 function setNet(n){S.net=(n==='test')?'test':'main';API=S.net==='test'?'https://test-api.pacifica.fi/api/v1':'https://api.pacifica.fi/api/v1';AGENT=null;ARMED=false;}
 const MODES={
@@ -1190,6 +1190,7 @@ async function scanOne(sym){
  scanOneBusy=false;render();renderFavs();alertsCheck()}
 function clearSignals(){
  gen++; // aborts any scan in flight
+ try{document.body.classList.remove('scanning');setDoob(false);}catch(e){}
  results=[];noData=[];agg={w:0,l:0};prevStrong=new Set();
  _q='';S.q='';document.getElementById('q').value='';
  S.dirF='';S.setupF='';document.getElementById('dirFilter').value='';document.getElementById('setupFilter').value='';
@@ -1472,7 +1473,7 @@ function postScan(all,aggT){
  pushHist(results.filter(r=>r.score>=PROFILES[S.profile].threshold).length,all.length);
  const rrs=results.map(r=>r.rr);
  document.getElementById('avgRR').textContent=rrs.length?('avg R:R 1:'+(rrs.reduce((s,x)=>s+x,0)/rrs.length).toFixed(1)):'avg R:R —';
- fetchDXY()}
+ fetchDXY();try{reconcileOpenTrades()}catch(e){}}
 
 /* ============ vNext ENGINES (Regime · Confidence · Risk · Journal) ============ */
 let JR=[];try{JR=JSON.parse(localStorage.getItem('petp_journal')||'[]')}catch(e){}
@@ -1905,19 +1906,26 @@ async function closeTradeDispatch(id){
  const t=TR.open.find(x=>x.id===id);if(!t){return}
  if(t.live&&hasAgentKey()){
   if(closeTradeDispatch._busy)return;
-  if(!confirm('Close '+t.sym+' on Pacifica now?\nSends a reduce-only market order for '+fmt(t.qty)+' '+t.sym+'.'))return;
-  if(!(await ensureArmed()))return;
   closeTradeDispatch._busy=true;
-  const long=t.dir==='long';
-  const _mi=MINFO[t.sym]||{};var _amt=roundDownLot(+t.qty,_mi.lot);if(!(_amt>0))_amt=+t.qty;
-  const payload={symbol:t.sym,reduce_only:true,amount:plainNum(_amt,8),side:long?'ask':'bid',slippage_percent:'0.5',client_order_id:(crypto.randomUUID?crypto.randomUUID():String(Date.now()))};
   try{
+   var _exists=await positionExists(t);
+   if(_exists===false){
+    setStatus(t.sym+' already closed on Pacifica — clearing…','var(--green)');
+    var _e0=null;try{_e0=await finalizeTradeClose(t,(MK[t.sym]&&MK[t.sym].p),'manual');}catch(fe){}
+    try{if(_e0)openJournalEdit(_e0);}catch(me){}
+    return;
+   }
+   if(!confirm('Close '+t.sym+' on Pacifica now?\nSends a reduce-only market order for '+fmt(t.qty)+' '+t.sym+'.'))return;
+   if(!(await ensureArmed()))return;
+   var long=t.dir==='long';
+   var _mi=MINFO[t.sym]||{};var _amt=roundDownLot(+t.qty,_mi.lot);if(!(_amt>0))_amt=+t.qty;
+   var payload={symbol:t.sym,reduce_only:true,amount:plainNum(_amt,8),side:long?'ask':'bid',slippage_percent:'0.5',client_order_id:(crypto.randomUUID?crypto.randomUUID():String(Date.now()))};
    await pacificaOrder(payload);
    setStatus('✅ '+t.sym+' close sent — logging…','var(--green)');
    var _e=null;try{_e=await finalizeTradeClose(t,(MK[t.sym]&&MK[t.sym].p),'manual');}catch(fe){}
    try{if(_e)openJournalEdit(_e);}catch(me){}
    setTimeout(renderLiveAccount,1500);
-  }catch(e){alert('Close order failed: '+e.message+'. If it did close on Pacifica, it will clear on the next refresh.');setTimeout(renderLiveAccount,1500);}
+  }catch(e){alert('Close order failed: '+e.message+'. Checking whether it closed anyway…');setTimeout(function(){reconcileOpenTrades();},1800);}
   finally{closeTradeDispatch._busy=false}
  }else{
   openCloseModal(id);
@@ -2142,6 +2150,29 @@ function openJournalEdit(entry){
   document.getElementById('mEmotion').value=(entry.emotion&&entry.emotion!=='auto'&&entry.emotion!=='')?entry.emotion:'Disciplined';
   document.getElementById('mTags').innerHTML=MISTAKES.map(function(m){return '<span class="tag'+((_mTags.indexOf(m)>=0)?' on':'')+'" role="button" tabindex="0" onclick="toggleTag(this,\''+m+'\')">'+m+'</span>';}).join('');
   var md=document.getElementById('modal');md.style.display='flex';document.body.style.overflow='hidden';
+ }catch(e){}
+}
+
+/* ===== reconcile app trades against real Pacifica positions ===== */
+async function positionExists(t){
+ try{
+  var addr=((S.wallet||'')+'').trim();if(!validWallet(addr))return null;
+  var pos=await jget2(API+'/positions?account='+encodeURIComponent(addr));
+  if(!pos||!pos.data)return null;
+  var found=pos.data.find(function(p){return symSafe(p.symbol)===t.sym&&((p.side==='bid')===(t.dir==='long'))&&Math.abs(+p.amount)>0;});
+  return !!found;
+ }catch(e){return null;}
+}
+async function reconcileOpenTrades(){
+ try{
+  var live=TR.open.filter(function(x){return x.live;});if(!live.length)return;
+  var addr=((S.wallet||'')+'').trim();if(!validWallet(addr))return;
+  var pos=await jget2(API+'/positions?account='+encodeURIComponent(addr));
+  if(!pos||!pos.data)return;var ps=pos.data;
+  for(var i=0;i<live.length;i++){var t=live[i];
+   var found=ps.find(function(p){return symSafe(p.symbol)===t.sym&&((p.side==='bid')===(t.dir==='long'))&&Math.abs(+p.amount)>0;});
+   if(!found){try{await finalizeTradeClose(t,(MK[t.sym]&&MK[t.sym].p),'auto');}catch(e){}}
+  }
  }catch(e){}
 }
 
