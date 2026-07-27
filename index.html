@@ -250,6 +250,13 @@ details.cdrop>summary::-webkit-details-marker{display:none}
  <div id="apexBody" class="foot" style="margin-top:8px">Learning starts with your first scan. APEX logs every setup, tracks what actually happened, and calibrates itself from real outcomes.</div>
  <div id="apexAiOut" class="foot" style="display:none;margin-top:8px;border-top:1px solid var(--border);padding-top:8px"></div>
 </div>
+<div class="card" id="cycCard">
+<details class="cdrop" id="cycDrop" open ontoggle="S.cycOpen=this.open;try{localStorage.setItem('petpapp_settings',JSON.stringify(S))}catch(e){}">
+<summary><b style="font-size:14px">₿ 4-Year Cycle</b> <span class="sub" id="cycSum">· where we are in Bitcoin’s halving cycle ▾</span></summary>
+<div id="cycBody" class="foot" style="margin-top:8px"></div>
+</details>
+</div>
+
 
 <div class="card">
  <div id="lossBanner" style="display:none;background:var(--red-bg);color:var(--red);font-weight:700;padding:8px 12px;border-radius:8px;margin-bottom:8px">🛑 Daily loss limit reached — you're done for today.</div>
@@ -495,7 +502,7 @@ This app is educational and informational only — not financial advice. It neve
 
 <script>
 /* ============ CONFIG ============ */
-var APP_VER='20260729e';(function(){try{if('serviceWorker' in navigator){navigator.serviceWorker.getRegistrations().then(function(rs){rs.forEach(function(r){try{r.update()}catch(e){}})}).catch(function(){});}var seen=null;try{seen=localStorage.getItem('petp_ver')}catch(e){}if(seen!==APP_VER){try{localStorage.setItem('petp_ver',APP_VER)}catch(e){}if(window.caches&&caches.keys){caches.keys().then(function(ks){ks.forEach(function(k){try{caches.delete(k)}catch(e){}})}).catch(function(){});}if('serviceWorker' in navigator){navigator.serviceWorker.getRegistrations().then(function(rs){var had=rs.length;rs.forEach(function(r){try{r.unregister()}catch(e){}});if(had){setTimeout(function(){try{location.reload()}catch(e){}},400);}}).catch(function(){});}}}catch(e){}})();
+var APP_VER='20260730b';(function(){try{if('serviceWorker' in navigator){navigator.serviceWorker.getRegistrations().then(function(rs){rs.forEach(function(r){try{r.update()}catch(e){}})}).catch(function(){});}var seen=null;try{seen=localStorage.getItem('petp_ver')}catch(e){}if(seen!==APP_VER){try{localStorage.setItem('petp_ver',APP_VER)}catch(e){}if(window.caches&&caches.keys){caches.keys().then(function(ks){ks.forEach(function(k){try{caches.delete(k)}catch(e){}})}).catch(function(){});}if('serviceWorker' in navigator){navigator.serviceWorker.getRegistrations().then(function(rs){var had=rs.length;rs.forEach(function(r){try{r.unregister()}catch(e){}});if(had){setTimeout(function(){try{location.reload()}catch(e){}},400);}}).catch(function(){});}}}catch(e){}})();
 let API='https://api.pacifica.fi/api/v1';
 function setNet(n){S.net=(n==='test')?'test':'main';API=S.net==='test'?'https://test-api.pacifica.fi/api/v1':'https://api.pacifica.fi/api/v1';AGENT=null;ARMED=false;}
 const MODES={
@@ -1496,7 +1503,7 @@ function postScan(all,aggT){
  renderHeat(all);renderSent(all);renderFavs();renderTrades();renderStats(aggT);
  sbUpdate();alertsCheck();econCheck();renderAlerts();
  invalidationCheck();favRipenCheck();dayCheck();
- renderVerdict();renderRisk();renderJournal();evictMK();renderLiveAccount();try{apexRegime();apexLogSetups();apexResolve();renderApex();apexdbPushMarket();apexActiveResolve();apexAutoRead()}catch(e){}
+ renderVerdict();renderRisk();renderJournal();evictMK();renderLiveAccount();try{apexRegime();apexLogSetups();apexResolve();renderApex();apexdbPushMarket();apexActiveResolve();apexAutoRead();renderCycle()}catch(e){}
  const reg=btcRegime();
  document.getElementById('btcReg').innerHTML='₿ regime: '+(reg==='long'?'<span class="up">▲ up — longs favored</span>':reg==='short'?'<span class="dn">▼ down — careful with longs</span>':'<span class="muted">neutral</span>');
  document.getElementById('sessLbl').textContent='Session: '+sessionInfo().l;
@@ -2554,6 +2561,7 @@ function apexPackage(r){
   rsi:r.rsiV,adx:r.adx,atr_pct:r.atrPct,funding_apr_pct:r.fundAnn,
   analogs:an&&!an.insufficient?{n:an.n,wins:an.w,examples:an.ex}:'insufficient history',
   market_regime:APEXREG.label,regime_detail:APEXREG.why,
+  btc_4yr_cycle:(function(){try{var c=cycleInfo();return{day:c.day,phase:c.phase}}catch(e){return null}})(),
   planned_size:r.size?+(+r.size).toFixed(4):null,planned_leverage:r.lev?+(+r.lev).toFixed(1):null,
   account_risk_pct:S.riskPct}}
 function apexOutTo(tgt,html){
@@ -2626,7 +2634,9 @@ async function apexAutoRead(force){
   var wins=resolved.filter(function(x){return x.result==='w'}).length;
   var ranked=results.slice().sort(function(a,b){return (b.apex||0)-(a.apex||0)}).slice(0,5)
    .map(function(r){return{symbol:r.sym,dir:r.dir,setup:r.setup,apex:r.apex,p_win:r.apexP!=null?+r.apexP.toFixed(2):null,veto:r.apexVeto,why:(r.apexWhy||[]).slice(0,2)}});
+  var _cy=cycleInfo();
   var data={now:new Date().toISOString(),market_regime:APEXREG.label,regime_detail:APEXREG.why,regime_features:APEXREG.feat,
+   btc_4yr_cycle:{day:_cy.day,pct_through:_cy.pct,phase:_cy.phase,days_to_next_halving:_cy.toNext},
    memory:{setups_logged:APEXMEM.setups.length,resolved:resolved.length,
     target_first_rate:resolved.length?+(wins/resolved.length).toFixed(2):null,
     db_totals:(typeof APEXDB!=='undefined'&&APEXDB.tot)?APEXDB.tot:null},
@@ -2665,6 +2675,51 @@ async function apexdbRobot(){try{
  const r=await sbReq('GET','audit_log?action=eq.heartbeat_run&select=ts&order=ts.desc&limit=1');
  if(r&&r.length){APEXDB.robotTs=Date.parse(r[0].ts);try{renderApex()}catch(e){}}}catch(e){}}
 try{setInterval(function(){try{apexdbRobot()}catch(e){}},600000)}catch(e){}
+/* ============ 4-YEAR CYCLE TRACKER (halving clock) ============ */
+var CYC_HALVINGS=['2012-11-28','2016-07-09','2020-05-11','2024-04-20'];
+var CYC_NEXT_EST='2028-04-14';           // estimated (block-time drift applies)
+var CYC_LEN=1458;                        // days, per cycle-repeat convention
+var CYC_TOPS=[371,526,548];              // days from halving to each cycle top (2013, 2017, 2021)
+var CYC_BOTTOMS=[777,889,924];           // days from halving to each bear bottom (2015, 2018, 2022)
+var CYC_HALV_PRICE=63842;                // BTC price on 2024-04-20 halving (approx)
+function cycleInfo(){
+ var h=Date.parse(CYC_HALVINGS[CYC_HALVINGS.length-1]+'T00:00:00Z');
+ var day=Math.floor((Date.now()-h)/86400000);
+ var pct=Math.min(100,Math.round(day/CYC_LEN*1000)/10);
+ var toNext=Math.max(0,Math.ceil((Date.parse(CYC_NEXT_EST+'T00:00:00Z')-Date.now())/86400000));
+ var phase,detail,col;
+ if(day<180){phase='Post-halving build';detail='historically quiet accumulation after the halving';col='var(--blue,#6cf)'}
+ else if(day<371){phase='Bull window opening';detail='past cycles began accelerating in this stretch';col='var(--green)'}
+ else if(day<=549){phase='HISTORICAL TOP WINDOW';detail='all three prior cycle tops landed between day 371 and day 549';col='var(--amber)'}
+ else if(day<=930){phase='Post-peak / bear phase';detail='historically the drawdown-and-bottoming stretch — prior bottoms hit around days 777–924';col='var(--red)'}
+ else{phase='Recovery & pre-halving climb';detail='historically grinding recovery into the next halving';col='var(--green)'}
+ return{day:day,pct:pct,toNext:toNext,phase:phase,detail:detail,col:col}}
+function renderCycle(){
+ try{
+  var el=document.getElementById('cycBody');if(!el)return;
+  var c=cycleInfo();
+  var sm=document.getElementById('cycSum');
+  if(sm)sm.innerHTML='· day <b>'+c.day+'</b> of ~'+CYC_LEN+' ('+c.pct+'%) · <b style="color:'+c.col+'">'+c.phase+'</b> ▾';
+  var px=(MK.BTC&&MK.BTC.p)?MK.BTC.p:null;
+  var mult=px?(px/CYC_HALV_PRICE):null;
+  var seg=function(w,ccol){return '<i style="display:inline-block;height:100%;width:'+w+'%;background:'+ccol+'"></i>'};
+  var mark=Math.min(99,c.day/CYC_LEN*100);
+  var h='<div style="margin-bottom:4px"><b style="color:'+c.col+'">'+c.phase+'</b> <span class="sub">— '+c.detail+'</span></div>';
+  h+='<div style="position:relative;height:14px;background:var(--card2);border-radius:7px;overflow:hidden;white-space:nowrap;font-size:0">'
+   +seg(180/CYC_LEN*100,'#3a6ea5')+seg((371-180)/CYC_LEN*100,'#1f8f4d')+seg((549-371)/CYC_LEN*100,'#b9770e')
+   +seg((930-549)/CYC_LEN*100,'#a93226')+seg((CYC_LEN-930)/CYC_LEN*100,'#27795c')
+   +'<span style="position:absolute;left:'+mark+'%;top:-2px;bottom:-2px;width:3px;background:#fff;border-radius:2px"></span></div>';
+  h+='<div class="sub" style="margin-top:3px">halving → build → bull → <b>top window</b> → bear/bottom → recovery → next halving. The white line is today.</div>';
+  h+='<div class="sub" style="margin-top:6px">'
+   +'📅 Day <b>'+c.day+'</b> since the Apr 2024 halving · <b>'+c.pct+'%</b> through the cycle'
+   +' · next halving in ≈<b>'+c.toNext+'</b> days (est. '+CYC_NEXT_EST+')'
+   +(mult?'<br>₿ price vs halving day: <b>'+mult.toFixed(2)+'x</b> ($'+fmt(CYC_HALV_PRICE)+' → '+fmt(px)+')':'')+'</div>';
+  h+='<div class="sub" style="margin-top:6px"><b>History (from each halving):</b> tops on days '+CYC_TOPS.join(', ')
+   +' · bottoms on days '+CYC_BOTTOMS.join(', ')
+   +' · top multiples: 94x (2013) → 30x (2017) → 7.8x (2021) — each cycle smaller.</div>';
+  h+='<div class="sub" style="margin-top:6px;color:var(--amber)">⚠ History rhymes, it does not repeat. This clock is context for sizing and patience — the APEX regime + veto decide trades, not the calendar. Alts follow BTC’s clock with more violence both ways.</div>';
+  el.innerHTML=h;
+ }catch(e){}}
 /* ============ PIN LOCK ============ */
 const PINKEY='petpapp_pin';
 let pinBuf='',lockMode='verify',lockNext=null,pinFirst='',hiddenAt=0;
@@ -2728,7 +2783,9 @@ function saveSettings(){
  S.pinRelock=document.getElementById('pinRelock').checked;
  S.feePct=Math.max(0,+document.getElementById('feePct').value||0);
  S.dayLoss=Math.max(0,+document.getElementById('dayLoss').value||0);
- S.wallet=((document.getElementById('wallet')||{}).value||'').trim();S.gemKey=((document.getElementById('gemKey')||{}).value||'').trim();S.maxHeat=Math.max(1,+((document.getElementById('maxHeat')||{}).value)||6);
+ var _wv=((document.getElementById('wallet')||{}).value||'').trim();if(_wv)S.wallet=_wv;
+ var _gv=((document.getElementById('gemKey')||{}).value||'').trim();if(_gv)S.gemKey=_gv;
+ S.maxHeat=Math.max(1,+((document.getElementById('maxHeat')||{}).value)||6);
  S.checklist=document.getElementById('ckList').checked;
  try{localStorage.setItem('petpapp_settings',JSON.stringify(S))}catch(e){}}
 function setAuto(sec){S.auto=+sec||0;
@@ -2763,7 +2820,7 @@ function init(){
  document.getElementById('scanBtn').onclick=()=>{if(Date.now()-(window._scanClick||0)<1500)return;window._scanClick=Date.now();runScan();};
  document.getElementById('alertBtn').onclick=()=>setAlerts(!S.alerts);
  if(S.alerts){const b=document.getElementById('alertBtn');b.classList.add('on');b.textContent='🔔'}
- if(S.auto>0)setAuto(S.auto);
+ if(S.auto>0)setTimeout(function(){try{setAuto(S.auto)}catch(e){}},50);
  document.querySelectorAll('#sigTable th').forEach(th=>th.onclick=()=>{const k=th.dataset.k;
   if(sortK===k)sortAsc=!sortAsc;else{sortK=k;sortAsc=false}render()});
  lockInit();
@@ -2790,7 +2847,7 @@ function init(){
  if(restore()){results.forEach(computeSize);prevStrong=strongKeys();render()}
  document.getElementById('jReport').onclick=journalReport;document.getElementById('jCsv').onclick=exportJournal;
  document.getElementById('liveRefresh').onclick=renderLiveAccount;document.getElementById('wallet').onchange=()=>{saveSettings();renderLiveAccount();syncAcctNow();};var _as=document.getElementById('acctSync');if(_as)_as.onclick=syncAcctNow;document.getElementById('maxHeat').onchange=()=>{saveSettings();renderRisk()};
- setNet(S.net||'main');(function(){var seg=document.getElementById('netSeg');if(seg){var bs=seg.querySelectorAll('button');for(var i=0;i<bs.length;i++){(function(b){b.classList.toggle('on',b.dataset.n===(S.net||'main'));b.onclick=function(){setNet(b.dataset.n);saveSettings();var xs=seg.querySelectorAll('button');for(var k=0;k<xs.length;k++)xs[k].classList.toggle('on',xs[k].dataset.n===S.net);var nl=document.getElementById('netLabel');if(nl)nl.textContent=(S.net==='test')?'test-api.pacifica.fi':'';renderTradeStatus();runScan();setTimeout(renderLiveAccount,300);};})(bs[i]);}var nl0=document.getElementById('netLabel');if(nl0)nl0.textContent=(S.net==='test')?'test-api.pacifica.fi':'';}})();renderVerdict();renderRisk();renderJournal();renderLiveAccount();renderTradeStatus();try{renderApex()}catch(e){}try{var _vv=document.getElementById('apexVer');if(_vv)_vv.textContent='v'+APP_VER}catch(e){}try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist()}catch(e){}try{if(S.sigOpen)document.getElementById('sigDrop').open=true;if(S.sb2Open)document.getElementById('sbDrop').open=true}catch(e){}try{applyAiVerdict();setTimeout(function(){apexAutoRead()},2500)}catch(e){}try{apexdbHydrate()}catch(e){}document.getElementById('saveAgent').onclick=async()=>{try{await saveAgentKey(document.getElementById('agentKey').value,document.getElementById('agentPass').value);document.getElementById('agentKey').value='';document.getElementById('agentPass').value='';setStatus('agent key saved & armed','var(--green)')}catch(e){alert(e.message)}};var _nt=document.getElementById('newsToggle');if(_nt){_nt.checked=(S.news!==false);_nt.onchange=function(){S.news=_nt.checked;saveSettings();fetchNews();};}
+ setNet(S.net||'main');(function(){var seg=document.getElementById('netSeg');if(seg){var bs=seg.querySelectorAll('button');for(var i=0;i<bs.length;i++){(function(b){b.classList.toggle('on',b.dataset.n===(S.net||'main'));b.onclick=function(){setNet(b.dataset.n);saveSettings();var xs=seg.querySelectorAll('button');for(var k=0;k<xs.length;k++)xs[k].classList.toggle('on',xs[k].dataset.n===S.net);var nl=document.getElementById('netLabel');if(nl)nl.textContent=(S.net==='test')?'test-api.pacifica.fi':'';renderTradeStatus();runScan();setTimeout(renderLiveAccount,300);};})(bs[i]);}var nl0=document.getElementById('netLabel');if(nl0)nl0.textContent=(S.net==='test')?'test-api.pacifica.fi':'';}})();renderVerdict();renderRisk();renderJournal();renderLiveAccount();renderTradeStatus();try{renderApex()}catch(e){}try{var _vv=document.getElementById('apexVer');if(_vv)_vv.textContent='v'+APP_VER}catch(e){}try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist()}catch(e){}try{if(S.sigOpen)document.getElementById('sigDrop').open=true;if(S.sb2Open)document.getElementById('sbDrop').open=true;if(S.cycOpen===false)document.getElementById('cycDrop').open=false;renderCycle()}catch(e){}try{applyAiVerdict();setTimeout(function(){apexAutoRead()},2500)}catch(e){}try{apexdbHydrate()}catch(e){}document.getElementById('saveAgent').onclick=async()=>{try{await saveAgentKey(document.getElementById('agentKey').value,document.getElementById('agentPass').value);document.getElementById('agentKey').value='';document.getElementById('agentPass').value='';setStatus('agent key saved & armed','var(--green)')}catch(e){alert(e.message)}};var _nt=document.getElementById('newsToggle');if(_nt){_nt.checked=(S.news!==false);_nt.onchange=function(){S.news=_nt.checked;saveSettings();fetchNews();};}
  (function(){var _dl=document.getElementById('dlLog');if(_dl)_dl.onclick=downloadLogs;var _ap=document.getElementById('agentPass');if(_ap)_ap.oninput=function(){var h=document.getElementById('pwHint');if(h)h.textContent=_ap.value?('strength: '+pwStrength(_ap.value)):'';};var cl=document.getElementById('chLoad');if(cl)cl.onclick=loadChartGrid;var cc=document.getElementById('chCompat');if(cc){cc.checked=!!S.chartsCompat;cc.onchange=function(){S.chartsCompat=cc.checked;saveSettings();var g=document.getElementById('chGrid');if(g&&g.style.display!=='none')loadChartGrid();};}var fc=document.getElementById('fsClose');if(fc)fc.onclick=closeFullChart;var fg=document.getElementById('fsGo');if(fg)fg.onclick=function(){var v=(document.getElementById('fsSym').value||'').trim().toUpperCase();if(v)openFullChart(v);};document.addEventListener('keydown',function(e){if(e.key==='Escape'){var o=document.getElementById('chartFS');if(o&&o.style.display==='flex')closeFullChart();}});})();
  window.addEventListener('popstate',()=>{if(document.getElementById('detail').style.display==='block')hideDetail()});
  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&Date.now()-(window._lastScanTs||0)>120000)runScan()});
