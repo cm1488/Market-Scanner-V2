@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-192.png">
-<title>PETP Trading OS · vNext</title>
+<title>APEX Trading OS</title>
 <style>
 :root{color-scheme:dark;
  --bg:#0b0f14;--card:#131a23;--card2:#0f151d;--border:#1f2937;--text:#e5eaf2;--muted:#8494ab;
@@ -237,6 +237,11 @@ body.boom #logo{animation:boom .85s ease-out!important}
  <div class="row" style="justify-content:space-between"><b style="font-size:14px">📡 Live account <span class="sub">· Pacifica read-only</span></b><button class="ghost" id="liveRefresh" aria-label="refresh live account">↻</button></div>
  <div id="liveBody" class="foot" style="margin-top:8px">Add your Pacifica wallet in Settings to see live balance &amp; positions.</div>
 </div>
+<div class="card" id="apexCard">
+ <div class="row" style="justify-content:space-between"><b style="font-size:14px">🧠 APEX Command Center <span class="sub">· regime · ranked · veto · memory</span></b><span id="apexDb" class="sub">☁ memory db: connecting…</span><button class="ghost" onclick="apexDaily()">🤖 AI read</button></div>
+ <div id="apexBody" class="foot" style="margin-top:8px">Learning starts with your first scan. APEX logs every setup, tracks what actually happened, and calibrates itself from real outcomes.</div>
+ <div id="apexAiOut" class="foot" style="display:none;margin-top:8px;border-top:1px solid var(--border);padding-top:8px"></div>
+</div>
 
 <div class="card">
  <div id="lossBanner" style="display:none;background:var(--red-bg);color:var(--red);font-weight:700;padding:8px 12px;border-radius:8px;margin-bottom:8px">🛑 Daily loss limit reached — you're done for today.</div>
@@ -374,6 +379,7 @@ These tabs change <b>the standards a setup must pass</b>. The indicators are the
  </div>
  <div class="row" style="margin-top:8px">
   <label class="inl">Pacifica wallet <input type="text" id="wallet" placeholder="wallet address" style="width:150px"></label>
+  <label class="inl">Gemini AI key <input type="password" id="gemKey" placeholder="AIza… (stays on this device)" style="width:150px" autocomplete="off"></label>
   <label class="inl">Account $ <input type="number" id="acct" min="0" step="100"></label><button class="ghost" id="acctSync" title="Set Account $ to your live Pacifica equity">⟳ Sync from live</button>
   <label class="inl">Risk % <input type="number" id="riskPct" min="0.1" max="5" step="0.1" style="width:64px"></label>
   <label class="inl">Fee %/side <input type="number" id="feePct" min="0" max="1" step="0.01" style="width:64px"></label>
@@ -476,7 +482,7 @@ This app is educational and informational only — not financial advice. It neve
 
 <script>
 /* ============ CONFIG ============ */
-var APP_VER='20260718j';(function(){try{if('serviceWorker' in navigator){navigator.serviceWorker.getRegistrations().then(function(rs){rs.forEach(function(r){try{r.update()}catch(e){}})}).catch(function(){});}var seen=null;try{seen=localStorage.getItem('petp_ver')}catch(e){}if(seen!==APP_VER){try{localStorage.setItem('petp_ver',APP_VER)}catch(e){}if(window.caches&&caches.keys){caches.keys().then(function(ks){ks.forEach(function(k){try{caches.delete(k)}catch(e){}})}).catch(function(){});}if('serviceWorker' in navigator){navigator.serviceWorker.getRegistrations().then(function(rs){var had=rs.length;rs.forEach(function(r){try{r.unregister()}catch(e){}});if(had){setTimeout(function(){try{location.reload()}catch(e){}},400);}}).catch(function(){});}}}catch(e){}})();
+var APP_VER='20260727c';(function(){try{if('serviceWorker' in navigator){navigator.serviceWorker.getRegistrations().then(function(rs){rs.forEach(function(r){try{r.update()}catch(e){}})}).catch(function(){});}var seen=null;try{seen=localStorage.getItem('petp_ver')}catch(e){}if(seen!==APP_VER){try{localStorage.setItem('petp_ver',APP_VER)}catch(e){}if(window.caches&&caches.keys){caches.keys().then(function(ks){ks.forEach(function(k){try{caches.delete(k)}catch(e){}})}).catch(function(){});}if('serviceWorker' in navigator){navigator.serviceWorker.getRegistrations().then(function(rs){var had=rs.length;rs.forEach(function(r){try{r.unregister()}catch(e){}});if(had){setTimeout(function(){try{location.reload()}catch(e){}},400);}}).catch(function(){});}}}catch(e){}})();
 let API='https://api.pacifica.fi/api/v1';
 function setNet(n){S.net=(n==='test')?'test':'main';API=S.net==='test'?'https://test-api.pacifica.fi/api/v1':'https://api.pacifica.fi/api/v1';AGENT=null;ARMED=false;}
 const MODES={
@@ -768,7 +774,7 @@ async function runScan(){
     if(g!==gen)return;
     try{
      const sigs=analyze(trig,cf,prof,mode);
-     MK[m.symbol]=Object.assign(MK[m.symbol]||{},snapMetrics(trig,cf));
+     MK[m.symbol]=Object.assign(MK[m.symbol]||{},snapMetrics(trig,cf));try{apexCache(m.symbol,(MODES[S.mode]||{}).trig,trig)}catch(e){}
      const lastClose=trig.c[trig.c.length-1],mark=+m.mark,ratio=mark/lastClose;
      const lastAge=(now-trig.t[trig.t.length-1])/1000;
      if(sigs.length){
@@ -1169,7 +1175,7 @@ async function scanOne(sym){
    const mode=MODES[S.mode],prof=PROFILES[S.profile];
    const [trig,cf]=await Promise.all([getCandles(sym,mode.trig,mode.trigSec),getCandles(sym,mode.conf,mode.confSec).catch(()=>null)]);
    const y=+m.yesterday_price;
-   MK[sym]=Object.assign(MK[sym]||{},snapMetrics(trig,cf),{p:+m.mark,chg:y>0?(+m.mark-y)/y*100:null,fund:+m.funding*24*365*100,ts:Date.now()});
+   MK[sym]=Object.assign(MK[sym]||{},snapMetrics(trig,cf),{p:+m.mark,chg:y>0?(+m.mark-y)/y*100:null,fund:+m.funding*24*365*100,ts:Date.now()});try{apexCache(sym,mode.trig,trig)}catch(e){}
    try{localStorage.setItem('petpapp_mk',JSON.stringify(MK))}catch(e){}
    const sigs=analyze(trig,cf,prof,mode);
    results=results.filter(r=>r.sym!==sym);
@@ -1187,7 +1193,7 @@ async function scanOne(sym){
      computeSize(row);results.push(row)}}
   }
  }catch(e){}
- scanOneBusy=false;render();renderFavs();alertsCheck()}
+ scanOneBusy=false;render();renderFavs();alertsCheck();try{apexRegime();apexLogSetups();apexResolve();renderApex()}catch(e){}}
 function clearSignals(){
  gen++; // aborts any scan in flight
  try{document.body.classList.remove('scanning');setDoob(false);}catch(e){}
@@ -1465,7 +1471,7 @@ function postScan(all,aggT){
  renderHeat(all);renderSent(all);renderFavs();renderTrades();renderStats(aggT);
  sbUpdate();alertsCheck();econCheck();renderAlerts();
  invalidationCheck();favRipenCheck();dayCheck();
- renderVerdict();renderRisk();renderJournal();evictMK();renderLiveAccount();
+ renderVerdict();renderRisk();renderJournal();evictMK();renderLiveAccount();try{apexRegime();apexLogSetups();apexResolve();renderApex();apexdbPushMarket()}catch(e){}
  const reg=btcRegime();
  document.getElementById('btcReg').innerHTML='₿ regime: '+(reg==='long'?'<span class="up">▲ up — longs favored</span>':reg==='short'?'<span class="dn">▼ down — careful with longs</span>':'<span class="muted">neutral</span>');
  document.getElementById('sessLbl').textContent='Session: '+sessionInfo().l;
@@ -2195,6 +2201,297 @@ async function syncAcctNow(){
  }catch(e){alert('Sync failed: '+e.message);}
 }
 
+/* ============ APEX ENGINE (regime · memory · calibration · analogs · veto · rank) ============ */
+var CANDC={};
+var APEXMEM={v:1,setups:[],regimes:[]};
+try{APEXMEM=Object.assign({v:1,setups:[],regimes:[]},JSON.parse(localStorage.getItem('petp_apex_mem')||'{}'))}catch(e){}
+var APEXREG={label:'unknown',why:'',feat:{}};
+function apexSave(){try{
+ if(APEXMEM.setups.length>900)APEXMEM.setups=APEXMEM.setups.slice(-900);
+ if(APEXMEM.regimes.length>400)APEXMEM.regimes=APEXMEM.regimes.slice(-400);
+ localStorage.setItem('petp_apex_mem',JSON.stringify(APEXMEM))}catch(e){}}
+function apexCache(sym,tf,trig){try{
+ if(!trig||!trig.c||!trig.t)return;
+ const n=trig.c.length,st=Math.max(0,n-160);
+ CANDC[sym]={tf:tf,t:trig.t.slice(st),h:trig.h.slice(st),l:trig.l.slice(st),c:trig.c.slice(st),ts:Date.now()}}catch(e){}}
+function apexRegime(){
+ const syms=Object.keys(MK);let up=0,dn=0,n=0,fsum=0,fn=0;
+ for(const s of syms){const k=MK[s];if(!k||!k.tr)continue;n++;
+  if(k.tr==='up')up++;else if(k.tr==='down')dn++;
+  if(k.fund!=null&&isFinite(k.fund)){fsum+=k.fund;fn++}}
+ const btc=MK.BTC||{};const bU=n?up/n:0,bD=n?dn/n:0;const fwide=fn?fsum/fn:0;
+ const vol=btc.atrPct!=null?btc.atrPct:null;const volHot=vol!=null&&vol>2.2;const chg=btc.chg||0;
+ let label='chop',why='';
+ if(chg<=-3||(bD>=0.65&&volHot)){label='risk-off';
+  why='BTC '+chg.toFixed(1)+'% today, '+Math.round(bD*100)+'% of market trending down'+(volHot?', volatility expanded':'')}
+ else if(bU>=0.6||bD>=0.6){const dirUp=bU>=bD;label=volHot?'trending-volatile':'trending-calm';
+  why=Math.round(Math.max(bU,bD)*100)+'% of market trending '+(dirUp?'up':'down')+(volHot?', high volatility':', orderly')}
+ else why='no market-wide trend ('+Math.round(bU*100)+'% up / '+Math.round(bD*100)+'% down)';
+ if(Math.abs(fwide)>25)why+=' · funding-wide '+fwide.toFixed(0)+'%/yr ('+(fwide>0?'longs paying — crowded long':'shorts paying — crowded short')+')';
+ APEXREG={label:label,why:why,feat:{bU:+bU.toFixed(2),bD:+bD.toFixed(2),fwide:+fwide.toFixed(1),btcVol:vol,btcChg:+(chg||0).toFixed(2),n:n}};
+ const last=APEXMEM.regimes[APEXMEM.regimes.length-1];
+ if(n>=5&&(!last||last.label!==label||Date.now()-last.ts>3600000))APEXMEM.regimes.push({ts:Date.now(),label:label,feat:APEXREG.feat});
+ return APEXREG}
+function apexLogSetups(){
+ const day=new Date().toISOString().slice(0,10);let added=0;
+ for(const r of results){
+  const key=r.sym+'|'+r.setup+'|'+r.dir+'|'+r.tf+'|'+day;
+  if(APEXMEM.setups.some(s=>s.key===key))continue;
+  APEXMEM.setups.push({key:key,ts:Date.now(),sym:r.sym,setup:r.setup,dir:r.dir,tf:r.tf,
+   entry:r.entry,stop:r.stop,target:r.target,score:r.score,
+   feat:{rsi:r.rsiV!=null?+(+r.rsiV).toFixed(1):null,adx:r.adx!=null?+(+r.adx).toFixed(1):null,
+    atrPct:+(+r.atrPct||0).toFixed(2),fund:+(+r.fundAnn||0).toFixed(1),rr:+(+r.rr||0).toFixed(2),
+    vr:r.volReg||'normal',off:r.offHrs?1:0},
+   regime:APEXREG.label,res:0,result:null,r:null});added++}
+ if(added)apexSave()}
+function apexResolve(){
+ let changed=0;
+ for(const p of APEXMEM.setups){
+  if(p.res)continue;
+  const c=CANDC[p.sym];if(!c||c.tf!==p.tf)continue;
+  let j0=-1;for(let i=0;i<c.t.length;i++){if(tsMs(c.t[i])>p.ts){j0=i;break}}
+  if(j0<0)continue;
+  const long=p.dir==='long';let filled=false,done=false;
+  for(let k=j0;k<c.c.length&&!done;k++){
+   if(!filled){
+    if(long?c.h[k]>=p.entry:c.l[k]<=p.entry)filled=true;
+    else if(k-j0>12){p.res=1;p.result='x';changed++;done=true;continue}
+    if(!filled)continue}
+   const hs=long?c.l[k]<=p.stop:c.h[k]>=p.stop;
+   const ht=long?c.h[k]>=p.target:c.l[k]<=p.target;
+   if(hs){p.res=1;p.result='l';p.r=-1;changed++;done=true}
+   else if(ht){p.res=1;p.result='w';
+    p.r=+(Math.abs(p.target-p.entry)/Math.max(1e-9,Math.abs(p.entry-p.stop))).toFixed(2);changed++;done=true}}}
+ if(changed)apexSave();
+ return changed}
+function apexBucket(sc){return sc>=72?'hi':sc>=56?'mid':'lo'}
+function apexCal(setup,dir,regime,sc){
+ const res=APEXMEM.setups.filter(s=>s.res&&s.result!=='x');
+ let pool=res.filter(s=>s.setup===setup&&s.regime===regime&&apexBucket(s.score)===apexBucket(sc));
+ let scope='setup+regime+grade';
+ if(pool.length<12){pool=res.filter(s=>s.setup===setup&&s.regime===regime);scope='setup+regime'}
+ if(pool.length<12){pool=res.filter(s=>s.setup===setup);scope='setup'}
+ if(pool.length<8)return{p:null,n:pool.length,scope:scope};
+ const w=pool.filter(s=>s.result==='w').length;
+ return{p:(w+1)/(pool.length+2),n:pool.length,w:w,scope:scope}}
+function apexAnalogs(r,kk){
+ const k=kk||20;const res=APEXMEM.setups.filter(s=>s.res&&s.result!=='x'&&s.feat);
+ if(res.length<8)return{n:res.length,insufficient:true};
+ const f={rsi:r.rsiV,adx:r.adx,atrPct:r.atrPct,fund:r.fundAnn};
+ const scored=res.map(s=>{const g=s.feat;let d=0;
+  d+=Math.pow(((f.rsi||50)-(g.rsi||50))/25,2);
+  d+=Math.pow(((f.adx||20)-(g.adx||20))/15,2);
+  d+=Math.pow(((f.atrPct||1)-(g.atrPct||1))/1.5,2);
+  d+=Math.pow(((f.fund||0)-(g.fund||0))/30,2);
+  d+=(s.dir===r.dir?0:1.5);
+  d+=(s.regime===APEXREG.label?0:0.8);
+  d+=(s.setup===r.setup?0:0.6);
+  return{s:s,d:d}}).sort((a,b)=>a.d-b.d).slice(0,k);
+ const w=scored.filter(x=>x.s.result==='w').length;
+ return{n:scored.length,w:w,p:(w+1)/(scored.length+2),insufficient:scored.length<8,
+  ex:scored.slice(0,3).map(x=>x.s.sym+' '+new Date(x.s.ts).toISOString().slice(5,10)+' '+(x.s.result==='w'?'✅':'❌'))}}
+function apexVeto(r){
+ const rs=[];let lvl='ok';const long=r.dir==='long';
+ if((long&&r.fundAnn>40)||(!long&&r.fundAnn<-40)){lvl='veto';
+  rs.push('crowded '+(long?'long':'short')+': funding '+r.fundAnn.toFixed(0)+'%/yr at extremes — squeeze risk against you')}
+ if(APEXREG.label==='risk-off'&&long){lvl='veto';
+  rs.push('risk-off regime: longs historically bleed in liquidation-driven tape')}
+ try{const evs=ECON.concat(nfpDates());const now=Date.now();
+  for(const e of evs){const t=Date.parse(e.d+'T13:00:00Z');const dh=(t-now)/3600000;
+   if(dh>0&&dh<12){if(lvl!=='veto')lvl='warn';rs.push(e.label+' in '+Math.round(dh)+'h — event volatility risk');break}}}catch(e){}
+ const cal=apexCal(r.setup,r.dir,APEXREG.label,r.score);
+ if(cal.p!=null&&cal.n>=15&&cal.p<0.35){lvl='veto';
+  rs.push('memory: this setup wins only '+Math.round(cal.p*100)+'% in '+APEXREG.label+' ('+cal.n+' precedents)')}
+ if(r.flags&&r.flags.lowVol&&r.offHrs){if(lvl!=='veto')lvl='warn';rs.push('thin market + off-hours: slippage risk')}
+ return{lvl:lvl,rs:rs,cal:cal}}
+function apexScoreAll(){
+ for(const r of results){
+  const cal=apexCal(r.setup,r.dir,APEXREG.label,r.score);
+  r.apexP=cal.p;r.apexN=cal.n;r.apexScope=cal.scope;
+  r.apex=cal.p!=null?Math.round(100*(0.5*cal.p+0.5*(r.score/100))):r.score;
+  const v=apexVeto(r);r.apexVeto=v.lvl;r.apexWhy=v.rs;
+  r.apexConf=cal.p==null?'building':cal.n>=30?'high':'medium'}}
+function renderApex(){
+ const el=document.getElementById('apexBody');if(!el)return;
+ apexRegime();
+ const resolved=APEXMEM.setups.filter(s=>s.res&&s.result!=='x');
+ const wins=resolved.filter(s=>s.result==='w').length;
+ let h='<b>Regime: '+APEXREG.label.toUpperCase()+'</b> <span class="sub">— '+(APEXREG.why||'scan to classify the market')+'</span>';
+ h+='<br><span class="sub">Memory: '+APEXMEM.setups.length+' setups logged · '+resolved.length+' resolved'+
+  (resolved.length?' · '+Math.round(100*wins/resolved.length)+'% hit target first':'')+
+  ' — every number below is calibrated from these real outcomes, not opinion.</span>';
+ if(!results.length){el.innerHTML=h+'<br><span class="muted" style="display:block;margin-top:6px">Run a scan — APEX logs every setup, checks what actually happened on later scans, ranks the whole board, and vetoes historically bad trades.</span>';return}
+ apexScoreAll();
+ const ranked=results.slice().sort((a,b)=>(b.apex||0)-(a.apex||0));
+ const ok=ranked.filter(r=>r.apexVeto!=='veto');
+ const vetoed=ranked.filter(r=>r.apexVeto==='veto');
+ h+='<div style="margin-top:8px"><b>🏆 Top opportunities (whole board, ranked)</b></div>';
+ h+=(ok.slice(0,3).map(r=>{
+  const ix=results.indexOf(r);const an=apexAnalogs(r);
+  return '<div class="mv" style="cursor:pointer;margin-top:4px" onclick="showDetail('+ix+')"><b>'+r.sym+'</b> <span class="pill '+r.dir+'">'+(r.dir==='long'?'▲':'▼')+'</span> '+r.setup+
+  ' · <b>APEX '+r.apex+'</b>'+
+  (r.apexP!=null?' <span class="sub">P(win)≈'+Math.round(r.apexP*100)+'% · '+r.apexN+' precedents ('+r.apexScope+') · confidence '+r.apexConf+'</span>':' <span class="sub">calibrating — confluence score until enough outcomes accrue</span>')+
+  (an&&!an.insufficient?'<br><span class="sub">nearest analogs: '+an.w+'/'+an.n+' won · e.g. '+an.ex.join(', ')+'</span>':'')+
+  (r.apexVeto==='warn'?'<br><span style="color:var(--amber)">⚠ '+r.apexWhy.join(' · ')+'</span>':'')+
+  '<br><a href="javascript:void(0)" class="sub" onclick="event.stopPropagation();apexCommittee('+ix+')">🤖 ask the AI committee</a>'+'</div>'}).join('')||'<span class="muted">none pass the veto right now — that is the system protecting you</span>');
+ if(vetoed.length){h+='<div style="margin-top:8px"><b>🚫 Vetoed ('+vetoed.length+')</b> <span class="sub">— blocked by evidence, tap symbol in table to inspect</span></div>'+
+  vetoed.slice(0,4).map(r=>'<div class="sub" style="margin-top:3px"><b>'+r.sym+'</b> '+r.setup+' — '+r.apexWhy.join(' · ')+'</div>').join('')}
+ el.innerHTML=h;apexSave()}
+
+/* ============ APEX DB SYNC (Supabase memory spine — Sprint 1) ============ */
+var SB_URL='https://ssytilyswhaeorhaaqjr.supabase.co';
+var SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNzeXRpbHlzd2hhZW9yaGFhcWpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUxNjM0NzEsImV4cCI6MjEwMDczOTQ3MX0.Ony61Ccw-HrPCOQb4YLsu8NNva0IZNytfAB0T0u7-Lg';
+var APEXDB={ok:null,last:0,n:0,err:''};
+function apexdbBadge(){
+ const el=document.getElementById('apexDb');if(!el)return;
+ el.innerHTML=APEXDB.ok===null?'☁ memory db: connecting…':
+  APEXDB.ok?'<span style="color:var(--green)">☁ memory db: synced'+(APEXDB.n?' · '+APEXDB.n+' setups':'')+'</span>':
+  '<span style="color:var(--amber)">☁ memory db: offline (local only) '+(APEXDB.err||'')+'</span>'}
+async function sbReq(method,path,body,prefer){
+ const h={apikey:SB_KEY,Authorization:'Bearer '+SB_KEY,'Content-Type':'application/json'};
+ if(prefer)h.Prefer=prefer;
+ let r;try{r=await fetch(SB_URL+'/rest/v1/'+path,{method:method,headers:h,body:body!==undefined?JSON.stringify(body):undefined})}catch(e){APEXDB.ok=false;APEXDB.err='(network)';apexdbBadge();throw e}
+ APEXDB.last=Date.now();
+ if(!r.ok){APEXDB.ok=false;APEXDB.err='('+r.status+')';apexdbBadge();throw new Error('db '+r.status)}
+ APEXDB.ok=true;APEXDB.err='';apexdbBadge();
+ const t=await r.text();return t?JSON.parse(t):null}
+function apexdbPushSetups(rows){
+ if(!rows||!rows.length)return;
+ const out=rows.map(p=>({key:p.key,ts:new Date(p.ts).toISOString(),symbol:p.sym,setup_type:p.setup,
+  direction:p.dir,tf:p.tf,entry:p.entry,stop:p.stop,target:p.target,score:p.score,
+  features:p.feat||{},regime:p.regime||'unknown'}));
+ sbReq('POST','setups?on_conflict=key',out,'resolution=ignore-duplicates,return=minimal').catch(()=>{})}
+async function apexdbPushOutcome(p){
+ try{
+  const found=await sbReq('GET','setups?key=eq.'+encodeURIComponent(p.key)+'&select=setup_id');
+  if(!found||!found.length)return;
+  await sbReq('POST','outcomes?on_conflict=setup_id',
+   [{setup_id:found[0].setup_id,result:p.result,realized_r:p.r}],
+   'resolution=ignore-duplicates,return=minimal')}catch(e){}}
+function apexdbPushRegime(label,feat){
+ sbReq('POST','regime_history',[{label:label,features:feat||{}}],'return=minimal').catch(()=>{})}
+function apexdbPushMarket(){
+ try{
+  const rows=[];const now=new Date().toISOString();
+  for(const sym of Object.keys(MK)){const k=MK[sym];if(!k||k.p==null)continue;
+   rows.push({symbol:sym,ts:now,mark:k.p,chg_pct:k.chg!=null?+(+k.chg).toFixed(3):null,
+    funding:k.fund!=null?+(+k.fund).toFixed(2):null,rsi:k.rsi!=null?k.rsi:null,
+    adx:k.adxV!=null?k.adxV:null,atr_pct:k.atrPct!=null?k.atrPct:null,trend:k.tr||null});
+   if(rows.length>=60)break}
+  if(rows.length)sbReq('POST','market_snapshots',rows,'return=minimal').catch(()=>{})}catch(e){}}
+async function apexdbHydrate(){
+ try{
+  const rows=await sbReq('GET','setups?select=key,ts,symbol,setup_type,direction,tf,entry,stop,target,score,features,regime,outcomes(result,realized_r)&order=ts.desc&limit=900');
+  if(!rows)return;
+  APEXDB.n=rows.length;apexdbBadge();
+  const have=new Set(APEXMEM.setups.map(s=>s.key));let merged=0;
+  for(const d of rows){
+   if(have.has(d.key))continue;
+   const oc=Array.isArray(d.outcomes)?d.outcomes[0]:d.outcomes;
+   APEXMEM.setups.push({key:d.key,ts:Date.parse(d.ts),sym:d.symbol,setup:d.setup_type,dir:d.direction,
+    tf:d.tf,entry:d.entry,stop:d.stop,target:d.target,score:d.score,feat:d.features||{},
+    regime:d.regime,res:oc?1:0,result:oc?oc.result:null,r:oc?oc.realized_r:null});merged++}
+  if(merged){APEXMEM.setups.sort((a,b)=>a.ts-b.ts);apexSave();try{renderApex()}catch(e){}}
+  // local rows the DB doesn't have yet (e.g. pre-DB era) — push them up
+  const dbKeys=new Set(rows.map(d=>d.key));
+  const missing=APEXMEM.setups.filter(s=>!dbKeys.has(s.key));
+  if(missing.length){apexdbPushSetups(missing);
+   for(const p of missing)if(p.res&&p.result&&p.result!=='x')apexdbPushOutcome(p)}
+  sbReq('POST','audit_log',[{actor:'app',action:'app_boot',details:{ver:(typeof APP_VER!=='undefined'?APP_VER:'?'),merged:merged,pushed:missing.length}}],'return=minimal').catch(()=>{})
+ }catch(e){}}
+/* ---- wrap the APEX engine so every event syncs ---- */
+(function(){
+ const _log=apexLogSetups;
+ apexLogSetups=function(){
+  const before=APEXMEM.setups.length;_log();
+  const added=APEXMEM.setups.slice(before);
+  if(added.length)apexdbPushSetups(added)};
+ const _res=apexResolve;
+ apexResolve=function(){
+  const pend=new Set(APEXMEM.setups.filter(s=>!s.res).map(s=>s.key));
+  const ch=_res();
+  if(ch){for(const p of APEXMEM.setups)
+   if(p.res&&pend.has(p.key)&&p.result&&p.result!=='x')apexdbPushOutcome(p)}
+  return ch};
+ const _reg=apexRegime;
+ apexRegime=function(){
+  const n0=APEXMEM.regimes.length;const out=_reg();
+  if(APEXMEM.regimes.length>n0)apexdbPushRegime(out.label,out.feat);
+  return out};
+})();
+
+/* ============ APEX AI (Gemini committee + daily read, via Edge Function) ============ */
+function apexEsc(t){return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+function apexAiFmt(t){
+ return apexEsc(t).replace(/^(BULL CASE:|BEAR CASE:|RISK OFFICER:|VERDICT:|REGIME:|OPPORTUNITIES:|DISCIPLINE:|BOTTOM LINE:)/gm,'<b>$1</b>').replace(/\n/g,'<br>')}
+function apexPromptFor(kind,data){
+ if(kind==='report')return 'You are the daily analyst inside APEX Trading OS, a personal quantitative perp-futures system. Write today\'s market read from the DATA below. HARD RULES: advisory only; never invent numbers; plain language for a newer trader; under 300 words.\n\nDATA:\n'+JSON.stringify(data)+'\n\nReply in EXACTLY this format:\nREGIME: (2-3 sentences on what today\'s regime means practically)\nOPPORTUNITIES: (2-4 sentences on the ranked setups, referencing their calibrated stats)\nDISCIPLINE: (2-3 sentences: what the memory/veto data says to avoid today)\nBOTTOM LINE: (1-2 sentences)';
+ return 'You are the AI trade committee inside APEX Trading OS, a personal quantitative perp-futures system. You receive a QUANTITATIVE PACKAGE computed by the system\'s statistical engine. HARD RULES: you are advisory only; you may NOT invent numbers, probabilities, or price targets; you may NOT contradict the calibrated statistics, but you MAY argue about their reliability; if the veto blocked the trade you may not overrule it. Be plain-spoken for a newer trader. Keep the whole reply under 250 words.\n\nQUANTITATIVE PACKAGE:\n'+JSON.stringify(data)+'\n\nReply in EXACTLY this format:\nBULL CASE: (2-3 sentences, strongest honest argument for the trade)\nBEAR CASE: (2-3 sentences, strongest honest argument against it)\nRISK OFFICER: (2-3 sentences on position size, stop placement, funding/regime/event risks)\nVERDICT: (1-2 sentences synthesis + one tag: CONFIDENCE HIGH, CONFIDENCE MEDIUM, or CONFIDENCE LOW)'}
+async function apexAI(kind,data){
+ const key=(S.gemKey||'').trim();
+ if(key){
+  const models=['gemini-flash-latest','gemini-3-flash','gemini-2.5-flash'];
+  let lastErr='';
+  for(const m of models){
+   const r=await fetch('https://generativelanguage.googleapis.com/v1beta/models/'+m+':generateContent?key='+encodeURIComponent(key),{
+    method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({contents:[{parts:[{text:apexPromptFor(kind,data)}]}],generationConfig:{temperature:0.4,maxOutputTokens:1200}})});
+   if(r.status===404){lastErr='model '+m+' unavailable';continue}
+   let j={};try{j=await r.json()}catch(e){}
+   if(r.status===400&&JSON.stringify(j).indexOf('API key')>=0)throw new Error('Gemini says the API key is invalid — re-copy it from aistudio.google.com/app/apikey into Settings.');
+   if(r.status===429)throw new Error('Gemini free-tier limit hit for now — try again in a minute (daily reads are cached to protect quota).');
+   if(!r.ok){lastErr=(j.error&&j.error.message)||('AI error '+r.status);break}
+   const t=((j.candidates&&j.candidates[0]&&j.candidates[0].content&&j.candidates[0].content.parts)||[]).map(p=>p.text||'').join('');
+   if(t)return t;lastErr='empty reply';break}
+  throw new Error(lastErr||'AI unavailable')}
+ // fallback: server proxy if it exists
+ const r=await fetch(SB_URL+'/functions/v1/apex-ai',{method:'POST',
+  headers:{'Content-Type':'application/json',apikey:SB_KEY,Authorization:'Bearer '+SB_KEY},
+  body:JSON.stringify({kind:kind,data:data})});
+ let j={};try{j=await r.json()}catch(e){}
+ if(r.status===404)throw new Error('Add your Gemini key in Settings (the "Gemini AI key" box) to turn the AI on.');
+ if(!r.ok)throw new Error(j.error||('AI error '+r.status));
+ return j.text||''}
+function apexAiOut(html){
+ const el=document.getElementById('apexAiOut');if(!el)return;
+ el.style.display='block';el.innerHTML=html}
+function apexPackage(r){
+ const an=apexAnalogs(r);
+ return{symbol:r.sym,direction:r.dir,setup:r.setup,timeframe:r.tf,
+  confluence_score:r.score,apex_score:r.apex,
+  calibrated_p_win:r.apexP!=null?+r.apexP.toFixed(2):null,precedents:r.apexN||0,confidence:r.apexConf,
+  veto:r.apexVeto,veto_reasons:r.apexWhy||[],
+  entry:r.entry,stop:r.stop,target:r.target,risk_reward:r.rr!=null?+(+r.rr).toFixed(2):null,
+  rsi:r.rsiV,adx:r.adx,atr_pct:r.atrPct,funding_apr_pct:r.fundAnn,
+  analogs:an&&!an.insufficient?{n:an.n,wins:an.w,examples:an.ex}:'insufficient history',
+  market_regime:APEXREG.label,regime_detail:APEXREG.why,
+  planned_size:r.size?+(+r.size).toFixed(4):null,planned_leverage:r.lev?+(+r.lev).toFixed(1):null,
+  account_risk_pct:S.riskPct}}
+async function apexCommittee(ix){
+ const r=results[ix];if(!r)return;
+ apexAiOut('<span class="muted">🤖 committee arguing '+apexEsc(r.sym)+' '+apexEsc(r.setup)+'…</span>');
+ try{const t=await apexAI('committee',apexPackage(r));
+  apexAiOut('<b>🤖 AI committee — '+apexEsc(r.sym)+' '+(r.dir==='long'?'LONG ▲':'SHORT ▼')+'</b> <span class="sub">advisory only — the numbers and the veto always win</span><br>'+apexAiFmt(t));
+ }catch(e){apexAiOut('<span style="color:var(--amber)">🤖 '+apexEsc(e.message)+'</span>')}}
+async function apexDaily(){
+ const day=new Date().toISOString().slice(0,10);
+ let cache=null;try{cache=JSON.parse(localStorage.getItem('petp_apex_report')||'null')}catch(e){}
+ if(cache&&cache.day===day){apexAiOut('<b>📋 AI daily read</b> <span class="sub">'+day+' (cached — free tier friendly)</span><br>'+apexAiFmt(cache.text));return}
+ apexAiOut('<span class="muted">🤖 writing today’s read…</span>');
+ try{
+  apexRegime();apexScoreAll();
+  const resolved=APEXMEM.setups.filter(s=>s.res&&s.result!=='x');
+  const wins=resolved.filter(s=>s.result==='w').length;
+  const ranked=results.slice().sort((a,b)=>(b.apex||0)-(a.apex||0)).slice(0,5)
+   .map(r=>({symbol:r.sym,dir:r.dir,setup:r.setup,apex:r.apex,p_win:r.apexP!=null?+r.apexP.toFixed(2):null,veto:r.apexVeto,why:(r.apexWhy||[]).slice(0,2)}));
+  const data={date:day,market_regime:APEXREG.label,regime_detail:APEXREG.why,regime_features:APEXREG.feat,
+   memory:{setups_logged:APEXMEM.setups.length,resolved:resolved.length,target_first_rate:resolved.length?+(wins/resolved.length).toFixed(2):null},
+   ranked_opportunities:ranked,open_trades:TR.open.map(t=>({symbol:t.sym,dir:t.dir,entry:t.entry,stop:t.stop,target:t.target}))};
+  const t=await apexAI('report',data);
+  try{localStorage.setItem('petp_apex_report',JSON.stringify({day:day,text:t}))}catch(e){}
+  apexAiOut('<b>📋 AI daily read</b> <span class="sub">'+day+'</span><br>'+apexAiFmt(t));
+ }catch(e){apexAiOut('<span style="color:var(--amber)">🤖 '+apexEsc(e.message)+'</span>')}}
+
 /* ============ PIN LOCK ============ */
 const PINKEY='petpapp_pin';
 let pinBuf='',lockMode='verify',lockNext=null,pinFirst='',hiddenAt=0;
@@ -2258,7 +2555,7 @@ function saveSettings(){
  S.pinRelock=document.getElementById('pinRelock').checked;
  S.feePct=Math.max(0,+document.getElementById('feePct').value||0);
  S.dayLoss=Math.max(0,+document.getElementById('dayLoss').value||0);
- S.wallet=((document.getElementById('wallet')||{}).value||'').trim();S.maxHeat=Math.max(1,+((document.getElementById('maxHeat')||{}).value)||6);
+ S.wallet=((document.getElementById('wallet')||{}).value||'').trim();S.gemKey=((document.getElementById('gemKey')||{}).value||'').trim();S.maxHeat=Math.max(1,+((document.getElementById('maxHeat')||{}).value)||6);
  S.checklist=document.getElementById('ckList').checked;
  try{localStorage.setItem('petpapp_settings',JSON.stringify(S))}catch(e){}}
 function setAuto(sec){S.auto=+sec||0;
@@ -2300,7 +2597,7 @@ function init(){
  document.getElementById('pinRelock').checked=!!S.pinRelock;
  document.getElementById('feePct').value=S.feePct;
  document.getElementById('dayLoss').value=S.dayLoss||'';
- document.getElementById('wallet').value=S.wallet||'';document.getElementById('maxHeat').value=S.maxHeat||6;
+ document.getElementById('wallet').value=S.wallet||'';var _gk=document.getElementById('gemKey');if(_gk){_gk.value=S.gemKey||'';_gk.onchange=saveSettings;}document.getElementById('maxHeat').value=S.maxHeat||6;
  document.getElementById('ckList').checked=!!S.checklist;
  document.getElementById('q').value=S.q||'';_q=(S.q||'').toUpperCase();
  document.getElementById('q').oninput=e=>setQuery(e.target.value);
@@ -2320,7 +2617,7 @@ function init(){
  if(restore()){results.forEach(computeSize);prevStrong=strongKeys();render()}
  document.getElementById('jReport').onclick=journalReport;document.getElementById('jCsv').onclick=exportJournal;
  document.getElementById('liveRefresh').onclick=renderLiveAccount;document.getElementById('wallet').onchange=()=>{saveSettings();renderLiveAccount();syncAcctNow();};var _as=document.getElementById('acctSync');if(_as)_as.onclick=syncAcctNow;document.getElementById('maxHeat').onchange=()=>{saveSettings();renderRisk()};
- setNet(S.net||'main');(function(){var seg=document.getElementById('netSeg');if(seg){var bs=seg.querySelectorAll('button');for(var i=0;i<bs.length;i++){(function(b){b.classList.toggle('on',b.dataset.n===(S.net||'main'));b.onclick=function(){setNet(b.dataset.n);saveSettings();var xs=seg.querySelectorAll('button');for(var k=0;k<xs.length;k++)xs[k].classList.toggle('on',xs[k].dataset.n===S.net);var nl=document.getElementById('netLabel');if(nl)nl.textContent=(S.net==='test')?'test-api.pacifica.fi':'';renderTradeStatus();runScan();setTimeout(renderLiveAccount,300);};})(bs[i]);}var nl0=document.getElementById('netLabel');if(nl0)nl0.textContent=(S.net==='test')?'test-api.pacifica.fi':'';}})();renderVerdict();renderRisk();renderJournal();renderLiveAccount();renderTradeStatus();document.getElementById('saveAgent').onclick=async()=>{try{await saveAgentKey(document.getElementById('agentKey').value,document.getElementById('agentPass').value);document.getElementById('agentKey').value='';document.getElementById('agentPass').value='';setStatus('agent key saved & armed','var(--green)')}catch(e){alert(e.message)}};var _nt=document.getElementById('newsToggle');if(_nt){_nt.checked=(S.news!==false);_nt.onchange=function(){S.news=_nt.checked;saveSettings();fetchNews();};}
+ setNet(S.net||'main');(function(){var seg=document.getElementById('netSeg');if(seg){var bs=seg.querySelectorAll('button');for(var i=0;i<bs.length;i++){(function(b){b.classList.toggle('on',b.dataset.n===(S.net||'main'));b.onclick=function(){setNet(b.dataset.n);saveSettings();var xs=seg.querySelectorAll('button');for(var k=0;k<xs.length;k++)xs[k].classList.toggle('on',xs[k].dataset.n===S.net);var nl=document.getElementById('netLabel');if(nl)nl.textContent=(S.net==='test')?'test-api.pacifica.fi':'';renderTradeStatus();runScan();setTimeout(renderLiveAccount,300);};})(bs[i]);}var nl0=document.getElementById('netLabel');if(nl0)nl0.textContent=(S.net==='test')?'test-api.pacifica.fi':'';}})();renderVerdict();renderRisk();renderJournal();renderLiveAccount();renderTradeStatus();try{renderApex()}catch(e){}try{apexdbHydrate()}catch(e){}document.getElementById('saveAgent').onclick=async()=>{try{await saveAgentKey(document.getElementById('agentKey').value,document.getElementById('agentPass').value);document.getElementById('agentKey').value='';document.getElementById('agentPass').value='';setStatus('agent key saved & armed','var(--green)')}catch(e){alert(e.message)}};var _nt=document.getElementById('newsToggle');if(_nt){_nt.checked=(S.news!==false);_nt.onchange=function(){S.news=_nt.checked;saveSettings();fetchNews();};}
  (function(){var _dl=document.getElementById('dlLog');if(_dl)_dl.onclick=downloadLogs;var _ap=document.getElementById('agentPass');if(_ap)_ap.oninput=function(){var h=document.getElementById('pwHint');if(h)h.textContent=_ap.value?('strength: '+pwStrength(_ap.value)):'';};var cl=document.getElementById('chLoad');if(cl)cl.onclick=loadChartGrid;var cc=document.getElementById('chCompat');if(cc){cc.checked=!!S.chartsCompat;cc.onchange=function(){S.chartsCompat=cc.checked;saveSettings();var g=document.getElementById('chGrid');if(g&&g.style.display!=='none')loadChartGrid();};}var fc=document.getElementById('fsClose');if(fc)fc.onclick=closeFullChart;var fg=document.getElementById('fsGo');if(fg)fg.onclick=function(){var v=(document.getElementById('fsSym').value||'').trim().toUpperCase();if(v)openFullChart(v);};document.addEventListener('keydown',function(e){if(e.key==='Escape'){var o=document.getElementById('chartFS');if(o&&o.style.display==='flex')closeFullChart();}});})();
  window.addEventListener('popstate',()=>{if(document.getElementById('detail').style.display==='block')hideDetail()});
  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&Date.now()-(window._lastScanTs||0)>120000)runScan()});
