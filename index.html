@@ -169,6 +169,8 @@ body.boom #logo{animation:boom .85s ease-out!important}
 @keyframes boom{0%{transform:scale(1) rotate(0);filter:none}18%{transform:scale(1.5) rotate(-7deg);filter:brightness(2.4) saturate(2)}42%{transform:scale(1.75) rotate(6deg);filter:brightness(3)}100%{transform:scale(.15) rotate(24deg);opacity:0;filter:brightness(.4)}}
 .apxstrip{font-size:12px;line-height:1.5}
 .apxsb summary{cursor:pointer;list-style:none}
+details.cdrop>summary{cursor:pointer;list-style:none}
+details.cdrop>summary::-webkit-details-marker{display:none}
 .apxsb summary::-webkit-details-marker{display:none}
 .apexop{background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:9px;margin-top:6px;cursor:pointer}
 .apexop button{font-size:12px}
@@ -296,8 +298,9 @@ body.boom #logo{animation:boom .85s ease-out!important}
 </div>
 
 <div class="card">
- <div class="row" style="justify-content:space-between">
-  <b style="font-size:14px">Signals</b>
+<details class="cdrop" id="sigDrop" ontoggle="S.sigOpen=this.open;try{localStorage.setItem('petpapp_settings',JSON.stringify(S))}catch(e){}">
+<summary><b style="font-size:14px">📋 Signals</b> <span class="sub">· every setup found this scan, sortable · tap to open ▾</span></summary>
+ <div class="row" style="justify-content:flex-end;margin-top:8px">
   <div class="row">
    <input type="text" id="q" placeholder="🔍 sym"><button class="ghost" id="qClr" title="clear search">✕</button><button class="ghost" id="clrBtn" title="empty the signals box and start fresh">Clear</button><select id="dirFilter"><option value="">All</option><option value="long">Long</option><option value="short">Short</option></select>
    <select id="setupFilter"><option value="">All setups</option><option value="Pullback">Pullback</option><option value="Squeeze">Breakout</option><option value="Oversold">Bounce</option><option value="Overbought">Rejection</option></select>
@@ -312,6 +315,7 @@ body.boom #logo{animation:boom .85s ease-out!important}
   <tbody id="sigBody"><tr><td colspan="11" class="muted">Tap Scan to find setups.</td></tr></tbody>
  </table></div>
  <div class="foot">Tap a row for levels, checklist, orderbook and TradingView chart. 💧 low liquidity · 🔥 crowded funding · ⏱ stale data. Replay = target-vs-stop first-touch outcomes over recent history (small sample, not a guarantee).</div>
+</details>
 </div>
 
 <div class="card" id="riskCard">
@@ -328,9 +332,11 @@ body.boom #logo{animation:boom .85s ease-out!important}
  <div id="journalBody" class="foot" style="margin-top:8px">No closed trades logged yet.</div>
 </div>
 <div class="card">
- <b style="font-size:14px">📊 Scoreboard <span class="sub">· automatic record of STRONG signals</span></b>
+<details class="cdrop" id="sbDrop" ontoggle="S.sb2Open=this.open;try{localStorage.setItem('petpapp_settings',JSON.stringify(S))}catch(e){}">
+<summary><b style="font-size:14px">📊 Signal Scoreboard</b> <span class="sub">· automatic record of STRONG signals · tap to open ▾</span></summary>
  <div id="sbBox" style="margin-top:8px" class="foot"></div>
  <button class="ghost" id="wkBtn" style="margin-top:8px">📤 Weekly review</button>
+</details>
 </div>
 <div class="card">
  <b style="font-size:14px">🔔 Price alerts</b>
@@ -384,8 +390,8 @@ These tabs change <b>the standards a setup must pass</b>. The indicators are the
   <label class="inl">Auto-rescan <select id="autoSel"><option value="0">Off</option><option value="300">5 min</option><option value="900">15 min</option><option value="1800">30 min</option><option value="3600">1 hour</option></select></label>
  </div>
  <div class="row" style="margin-top:8px">
-  <label class="inl">Pacifica wallet <input type="text" id="wallet" placeholder="wallet address" style="width:150px"></label>
-  <label class="inl">Gemini AI key <input type="password" id="gemKey" placeholder="AIza… (stays on this device)" style="width:150px" autocomplete="off"></label>
+  <label class="inl">Pacifica wallet <input type="text" id="wallet" placeholder="wallet address" style="width:150px"> <button class="ghost" title="unlink wallet" onclick="S.wallet='';document.getElementById('wallet').value='';saveSettings();try{renderLiveAccount()}catch(e){};setStatus('wallet unlinked','var(--muted)')">✕</button></label>
+  <label class="inl">Gemini AI key <input type="password" id="gemKey" placeholder="AIza… (stays on this device)" style="width:150px" autocomplete="off"> <button class="ghost" title="unlink AI key" onclick="S.gemKey='';document.getElementById('gemKey').value='';saveSettings();setStatus('AI key unlinked','var(--muted)')">✕</button></label>
   <label class="inl">Account $ <input type="number" id="acct" min="0" step="100"></label><button class="ghost" id="acctSync" title="Set Account $ to your live Pacifica equity">⟳ Sync from live</button>
   <label class="inl">Risk % <input type="number" id="riskPct" min="0.1" max="5" step="0.1" style="width:64px"></label>
   <label class="inl">Fee %/side <input type="number" id="feePct" min="0" max="1" step="0.01" style="width:64px"></label>
@@ -488,7 +494,7 @@ This app is educational and informational only — not financial advice. It neve
 
 <script>
 /* ============ CONFIG ============ */
-var APP_VER='20260729b';(function(){try{if('serviceWorker' in navigator){navigator.serviceWorker.getRegistrations().then(function(rs){rs.forEach(function(r){try{r.update()}catch(e){}})}).catch(function(){});}var seen=null;try{seen=localStorage.getItem('petp_ver')}catch(e){}if(seen!==APP_VER){try{localStorage.setItem('petp_ver',APP_VER)}catch(e){}if(window.caches&&caches.keys){caches.keys().then(function(ks){ks.forEach(function(k){try{caches.delete(k)}catch(e){}})}).catch(function(){});}if('serviceWorker' in navigator){navigator.serviceWorker.getRegistrations().then(function(rs){var had=rs.length;rs.forEach(function(r){try{r.unregister()}catch(e){}});if(had){setTimeout(function(){try{location.reload()}catch(e){}},400);}}).catch(function(){});}}}catch(e){}})();
+var APP_VER='20260729d';(function(){try{if('serviceWorker' in navigator){navigator.serviceWorker.getRegistrations().then(function(rs){rs.forEach(function(r){try{r.update()}catch(e){}})}).catch(function(){});}var seen=null;try{seen=localStorage.getItem('petp_ver')}catch(e){}if(seen!==APP_VER){try{localStorage.setItem('petp_ver',APP_VER)}catch(e){}if(window.caches&&caches.keys){caches.keys().then(function(ks){ks.forEach(function(k){try{caches.delete(k)}catch(e){}})}).catch(function(){});}if('serviceWorker' in navigator){navigator.serviceWorker.getRegistrations().then(function(rs){var had=rs.length;rs.forEach(function(r){try{r.unregister()}catch(e){}});if(had){setTimeout(function(){try{location.reload()}catch(e){}},400);}}).catch(function(){});}}}catch(e){}})();
 let API='https://api.pacifica.fi/api/v1';
 function setNet(n){S.net=(n==='test')?'test':'main';API=S.net==='test'?'https://test-api.pacifica.fi/api/v1':'https://api.pacifica.fi/api/v1';AGENT=null;ARMED=false;}
 const MODES={
@@ -1140,8 +1146,8 @@ function pushHist(strong,scanned){
  renderHist()}
 function renderHist(){const el=document.getElementById('histList');
  el.innerHTML=HIST.length?HIST.map(h=>'<div class="trow"><div>'+new Date(h.ts).toLocaleString()+'<br><span class="sub">'+h.mode+' / '+h.profile+'</span></div><div>'+h.strong+' strong · best '+h.best+'</div></div>').join(''):'<span class="sub">No scans yet.</span>'}
-function exportData(){const data={v:1,settings:S,trades:TR,hist:HIST,ts:Date.now()};
- const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(data,null,1)],{type:'application/json'}));a.download='petp-backup.json';a.click()}
+function exportData(){const data={v:2,settings:S,trades:TR,hist:HIST,journal:(typeof JR!=='undefined'?JR:[]),apexmem:(typeof APEXMEM!=='undefined'?APEXMEM:null),agent:(function(){try{return localStorage.getItem('petp_agent_enc')||null}catch(e){return null}})(),ts:Date.now()};
+ const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(data,null,1)],{type:'application/json'}));a.download='apex-backup.json';a.click()}
 function importData(f){
  if(!f||f.size>2*1024*1024){alert('Import failed: file missing or larger than 2 MB.');return;}
  const rd=new FileReader();
@@ -1150,7 +1156,7 @@ function importData(f){
   if(!raw||typeof raw!=='object'||Array.isArray(raw))throw 0;
   const d=_safeVal(raw,0);
   if(d.settings&&typeof d.settings==='object'){
-   const s2=d.settings,allow={mode:'string',profile:'string',minScore:'number',acct:'number',riskPct:'number',topN:'number',auto:'number',feePct:'number',dayLoss:'number',maxHeat:'number',checklist:'boolean',pinRelock:'boolean',news:'boolean',net:'string',chartsCompat:'boolean',wallet:'string',dirF:'string',setupF:'string',q:'string'};
+   const s2=d.settings,allow={mode:'string',profile:'string',minScore:'number',acct:'number',riskPct:'number',topN:'number',auto:'number',feePct:'number',dayLoss:'number',maxHeat:'number',checklist:'boolean',pinRelock:'boolean',news:'boolean',net:'string',chartsCompat:'boolean',wallet:'string',gemKey:'string',dirF:'string',setupF:'string',q:'string'};
    for(const k in allow){if(Object.prototype.hasOwnProperty.call(s2,k)){const v=s2[k];if(allow[k]==='number'){if(typeof v==='number'&&isFinite(v))S[k]=v;}else if(typeof v===allow[k])S[k]=v;}}
    if(Array.isArray(s2.favs))S.favs=s2.favs.filter(x=>typeof x==='string').map(symSafe).slice(0,200);
    if(Array.isArray(s2.charts)&&s2.charts.length===4)S.charts=s2.charts.filter(x=>typeof x==='string').map(symSafe).slice(0,4);
@@ -1158,6 +1164,12 @@ function importData(f){
   }
   if(d.trades&&typeof d.trades==='object'){TR={open:Array.isArray(d.trades.open)?d.trades.open.slice(0,500):[],closed:Array.isArray(d.trades.closed)?d.trades.closed.slice(0,500):[]};}
   if(Array.isArray(d.hist))HIST=d.hist.slice(0,50);
+  if(Array.isArray(d.journal)){JR=d.journal.slice(0,2000);try{jrSave()}catch(e){}}
+  if(d.apexmem&&typeof d.apexmem==='object'&&Array.isArray(d.apexmem.setups)){
+   APEXMEM.setups=d.apexmem.setups.slice(-900);
+   APEXMEM.regimes=Array.isArray(d.apexmem.regimes)?d.apexmem.regimes.slice(-400):[];
+   try{apexSave()}catch(e){}}
+  if(typeof d.agent==='string'&&d.agent.length>10&&d.agent.length<4000){try{localStorage.setItem('petp_agent_enc',d.agent)}catch(e){}}
   localStorage.setItem('petpapp_settings',JSON.stringify(S));saveTR();localStorage.setItem('petpapp_hist',JSON.stringify(HIST));
   alert('Imported — reloading.');location.reload();
  }catch(e){alert('Import failed: not a valid PETP backup file.');}};
@@ -2772,7 +2784,7 @@ function init(){
  if(restore()){results.forEach(computeSize);prevStrong=strongKeys();render()}
  document.getElementById('jReport').onclick=journalReport;document.getElementById('jCsv').onclick=exportJournal;
  document.getElementById('liveRefresh').onclick=renderLiveAccount;document.getElementById('wallet').onchange=()=>{saveSettings();renderLiveAccount();syncAcctNow();};var _as=document.getElementById('acctSync');if(_as)_as.onclick=syncAcctNow;document.getElementById('maxHeat').onchange=()=>{saveSettings();renderRisk()};
- setNet(S.net||'main');(function(){var seg=document.getElementById('netSeg');if(seg){var bs=seg.querySelectorAll('button');for(var i=0;i<bs.length;i++){(function(b){b.classList.toggle('on',b.dataset.n===(S.net||'main'));b.onclick=function(){setNet(b.dataset.n);saveSettings();var xs=seg.querySelectorAll('button');for(var k=0;k<xs.length;k++)xs[k].classList.toggle('on',xs[k].dataset.n===S.net);var nl=document.getElementById('netLabel');if(nl)nl.textContent=(S.net==='test')?'test-api.pacifica.fi':'';renderTradeStatus();runScan();setTimeout(renderLiveAccount,300);};})(bs[i]);}var nl0=document.getElementById('netLabel');if(nl0)nl0.textContent=(S.net==='test')?'test-api.pacifica.fi':'';}})();renderVerdict();renderRisk();renderJournal();renderLiveAccount();renderTradeStatus();try{renderApex()}catch(e){}try{var _vv=document.getElementById('apexVer');if(_vv)_vv.textContent='v'+APP_VER}catch(e){}try{applyAiVerdict();setTimeout(function(){apexAutoRead()},2500)}catch(e){}try{apexdbHydrate()}catch(e){}document.getElementById('saveAgent').onclick=async()=>{try{await saveAgentKey(document.getElementById('agentKey').value,document.getElementById('agentPass').value);document.getElementById('agentKey').value='';document.getElementById('agentPass').value='';setStatus('agent key saved & armed','var(--green)')}catch(e){alert(e.message)}};var _nt=document.getElementById('newsToggle');if(_nt){_nt.checked=(S.news!==false);_nt.onchange=function(){S.news=_nt.checked;saveSettings();fetchNews();};}
+ setNet(S.net||'main');(function(){var seg=document.getElementById('netSeg');if(seg){var bs=seg.querySelectorAll('button');for(var i=0;i<bs.length;i++){(function(b){b.classList.toggle('on',b.dataset.n===(S.net||'main'));b.onclick=function(){setNet(b.dataset.n);saveSettings();var xs=seg.querySelectorAll('button');for(var k=0;k<xs.length;k++)xs[k].classList.toggle('on',xs[k].dataset.n===S.net);var nl=document.getElementById('netLabel');if(nl)nl.textContent=(S.net==='test')?'test-api.pacifica.fi':'';renderTradeStatus();runScan();setTimeout(renderLiveAccount,300);};})(bs[i]);}var nl0=document.getElementById('netLabel');if(nl0)nl0.textContent=(S.net==='test')?'test-api.pacifica.fi':'';}})();renderVerdict();renderRisk();renderJournal();renderLiveAccount();renderTradeStatus();try{renderApex()}catch(e){}try{var _vv=document.getElementById('apexVer');if(_vv)_vv.textContent='v'+APP_VER}catch(e){}try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist()}catch(e){}try{if(S.sigOpen)document.getElementById('sigDrop').open=true;if(S.sb2Open)document.getElementById('sbDrop').open=true}catch(e){}try{applyAiVerdict();setTimeout(function(){apexAutoRead()},2500)}catch(e){}try{apexdbHydrate()}catch(e){}document.getElementById('saveAgent').onclick=async()=>{try{await saveAgentKey(document.getElementById('agentKey').value,document.getElementById('agentPass').value);document.getElementById('agentKey').value='';document.getElementById('agentPass').value='';setStatus('agent key saved & armed','var(--green)')}catch(e){alert(e.message)}};var _nt=document.getElementById('newsToggle');if(_nt){_nt.checked=(S.news!==false);_nt.onchange=function(){S.news=_nt.checked;saveSettings();fetchNews();};}
  (function(){var _dl=document.getElementById('dlLog');if(_dl)_dl.onclick=downloadLogs;var _ap=document.getElementById('agentPass');if(_ap)_ap.oninput=function(){var h=document.getElementById('pwHint');if(h)h.textContent=_ap.value?('strength: '+pwStrength(_ap.value)):'';};var cl=document.getElementById('chLoad');if(cl)cl.onclick=loadChartGrid;var cc=document.getElementById('chCompat');if(cc){cc.checked=!!S.chartsCompat;cc.onchange=function(){S.chartsCompat=cc.checked;saveSettings();var g=document.getElementById('chGrid');if(g&&g.style.display!=='none')loadChartGrid();};}var fc=document.getElementById('fsClose');if(fc)fc.onclick=closeFullChart;var fg=document.getElementById('fsGo');if(fg)fg.onclick=function(){var v=(document.getElementById('fsSym').value||'').trim().toUpperCase();if(v)openFullChart(v);};document.addEventListener('keydown',function(e){if(e.key==='Escape'){var o=document.getElementById('chartFS');if(o&&o.style.display==='flex')closeFullChart();}});})();
  window.addEventListener('popstate',()=>{if(document.getElementById('detail').style.display==='block')hideDetail()});
  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&Date.now()-(window._lastScanTs||0)>120000)runScan()});
