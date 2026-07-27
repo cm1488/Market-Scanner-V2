@@ -227,6 +227,7 @@ body.boom #logo{animation:boom .85s ease-out!important}
   <div class="seg" id="modeSeg"></div>
   <div class="seg" id="profSeg"></div>
  </div>
+ <div id="segHelp" class="sub" style="margin-top:4px"></div>
  <div class="prog" id="prog"><i id="progBar"></i></div>
 </header>
 <div class="verdict" id="verdict" role="status" aria-live="polite">
@@ -249,7 +250,7 @@ body.boom #logo{animation:boom .85s ease-out!important}
   <div class="chip"><b id="cScanned">–</b><span>scanned</span></div>
   <div class="chip" id="chipStrong"><b id="cStrong" style="color:var(--green)">–</b><span>strong</span></div>
   <div class="chip"><b id="cWatch" style="color:var(--amber)">–</b><span>watchlist</span></div>
-  <div class="chip"><b id="cReplay">–</b><span>replay W-L</span></div>
+  <div class="chip"><b id="cReplay">–</b><span>backtest W-L</span></div>
   <div class="chip"><b id="cTime">–</b><span>last scan</span></div>
  </div>
  <div class="movers" id="movers" style="margin-top:8px"></div>
@@ -332,7 +333,7 @@ body.boom #logo{animation:boom .85s ease-out!important}
 </div>
 <details><summary>Scan history</summary><div class="card" style="margin:8px 0"><div id="histList"></div></div></details>
 
-<details><summary>What do Scalp / Day / Swing and the profiles actually change?</summary><div class="card" style="margin:8px 0"><div class="foot" style="font-size:12px;line-height:1.65">
+<details><summary>What do the speed tabs (Scalp → Swing) and the profiles actually change?</summary><div class="card" style="margin:8px 0"><div class="foot" style="font-size:12px;line-height:1.65">
 <b style="color:var(--text);font-size:13px">SCALP / DAY / SWING — how fast you trade</b><br>
 These tabs change <b>which candles the scanner reads</b>. Every rule stays identical — but stops, targets and trade duration scale with the candle size.<br><br>
 <b>⚡ Scalp — tap it and:</b><br>
@@ -345,7 +346,7 @@ These tabs change <b>which candles the scanner reads</b>. Every rule stays ident
 · It studies roughly the last <b>2–3 days</b><br>
 · Stops &amp; targets are medium — trades resolve in <b>hours, usually inside a day</b><br>
 · Best balance of quality vs frequency. The default.<br><br>
-<b>📅 Swing — tap it and:</b><br>
+<b>🌤 30m — tap it and:</b><br>· Signals from <b>30-minute</b> candles, trend confirmed on <b>4-hour</b><br>· Studies roughly the last <b>5 days</b> of price action<br>· Trades typically resolve in <b>hours to a couple of days</b> — check in a few times a day.<br><br><b>⛅ 1h — tap it and:</b><br>· Signals from <b>1-hour</b> candles, trend confirmed on <b>4-hour</b><br>· Studies roughly the last <b>10 days</b> of price action<br>· Trades typically resolve in <b>1–4 days</b> — a relaxed pace without full swing patience.<br><br><b>📅 Swing — tap it and:</b><br>
 · Signals from <b>4-hour</b> candles, trend confirmed on the <b>daily</b><br>
 · It studies roughly the last <b>6 weeks</b><br>
 · Stops &amp; targets get <b>wide</b> (often several percent) — trades resolve in <b>days to weeks</b><br>
@@ -482,12 +483,14 @@ This app is educational and informational only — not financial advice. It neve
 
 <script>
 /* ============ CONFIG ============ */
-var APP_VER='20260727f';(function(){try{if('serviceWorker' in navigator){navigator.serviceWorker.getRegistrations().then(function(rs){rs.forEach(function(r){try{r.update()}catch(e){}})}).catch(function(){});}var seen=null;try{seen=localStorage.getItem('petp_ver')}catch(e){}if(seen!==APP_VER){try{localStorage.setItem('petp_ver',APP_VER)}catch(e){}if(window.caches&&caches.keys){caches.keys().then(function(ks){ks.forEach(function(k){try{caches.delete(k)}catch(e){}})}).catch(function(){});}if('serviceWorker' in navigator){navigator.serviceWorker.getRegistrations().then(function(rs){var had=rs.length;rs.forEach(function(r){try{r.unregister()}catch(e){}});if(had){setTimeout(function(){try{location.reload()}catch(e){}},400);}}).catch(function(){});}}}catch(e){}})();
+var APP_VER='20260728b';(function(){try{if('serviceWorker' in navigator){navigator.serviceWorker.getRegistrations().then(function(rs){rs.forEach(function(r){try{r.update()}catch(e){}})}).catch(function(){});}var seen=null;try{seen=localStorage.getItem('petp_ver')}catch(e){}if(seen!==APP_VER){try{localStorage.setItem('petp_ver',APP_VER)}catch(e){}if(window.caches&&caches.keys){caches.keys().then(function(ks){ks.forEach(function(k){try{caches.delete(k)}catch(e){}})}).catch(function(){});}if('serviceWorker' in navigator){navigator.serviceWorker.getRegistrations().then(function(rs){var had=rs.length;rs.forEach(function(r){try{r.unregister()}catch(e){}});if(had){setTimeout(function(){try{location.reload()}catch(e){}},400);}}).catch(function(){});}}}catch(e){}})();
 let API='https://api.pacifica.fi/api/v1';
 function setNet(n){S.net=(n==='test')?'test':'main';API=S.net==='test'?'https://test-api.pacifica.fi/api/v1':'https://api.pacifica.fi/api/v1';AGENT=null;ARMED=false;}
 const MODES={
  scalp:{label:'Scalp',trig:'5m',conf:'15m',trigSec:300,confSec:900,vwap:true,tvi:'5'},
  day:{label:'Day',trig:'15m',conf:'1h',trigSec:900,confSec:3600,vwap:true,tvi:'15'},
+ m30:{label:'30m',trig:'30m',conf:'4h',trigSec:1800,confSec:14400,vwap:true,tvi:'30'},
+ h1:{label:'1h',trig:'1h',conf:'4h',trigSec:3600,confSec:14400,vwap:false,tvi:'60'},
  swing:{label:'Swing',trig:'4h',conf:'1d',trigSec:14400,confSec:86400,vwap:false,tvi:'240'}};
 const PROFILES={
  conservative:{label:'Consv',threshold:70,minRR:2,rsiOS:30,pullRSI:[45,68],allow:['pullback','breakout'],sma200Gate:true},
@@ -792,7 +795,7 @@ async function runScan(){
        const mi=minfo[m.symbol]||{};
        const row={sym:m.symbol,setup:s.type,dir:s.dir,score:s.score,parts:s.parts,checks:s.checks,
         price:mark,entry:s.entry*ratio,stop:s.stop*ratio,target:s.target*ratio,rr:s.rr,
-        atrPct:s.atr/lastClose*100,adx:s.adx,rsiV:s.rsi,bias:s.bias,fundAnn,vol24h:+m.volume_24h,
+        atrPct:s.atr/lastClose*100,adx:s.adx,rsiV:s.rsi,bias:s.bias,fundAnn,oiRoc:((MK[m.symbol]||{}).oiRoc!=null?(MK[m.symbol]||{}).oiRoc:null),vol24h:+m.volume_24h,
         maxLev:mi.maxLev||null,tf:mode.trig,ctf:mode.conf,src:trig.src,replayW:rp.w,replayL:rp.l,replayN:rp.w+rp.l,
         flags:{lowVol:+m.volume_24h<50000,crowded:(s.dir==='long'&&fundAnn>30)||(s.dir==='short'&&fundAnn<-30),stale:lastAge>4*mode.trigSec}};
        row.spreadPct=spreadPct;row.volReg=volReg;row.offHrs=offHrs;
@@ -985,7 +988,7 @@ function snapMetrics(trig,cf){const c=trig.c,n=c.length;if(n<30)return{};
  return{rsi:R[i]!=null?Math.round(R[i]):null,adxV:AD.adx[i]!=null?Math.round(AD.adx[i]):null,
   atrPct:A[i]?+(A[i]/c[i]*100).toFixed(2):null,tr:(e9[i]!=null&&e21[i]!=null)?(e9[i]>e21[i]?'up':'down'):null,
   bias:confBias(cf),mts:Date.now()}}
-function horizon(tf){return tf==='5m'?'⚡ short-term: mins–hrs':tf==='15m'?'☀️ short-term: hours–1 day':'📅 long-term: days–weeks'}
+function horizon(tf){return tf==='5m'?'⚡ short-term: mins–hrs':tf==='15m'?'☀️ short-term: hours–1 day':tf==='30m'?'🌤 intraday: hours–2 days':tf==='1h'?'⛅ multi-day: 1–4 days':'📅 long-term: days–weeks'}
 let TR={open:[],closed:[]};
 try{TR=Object.assign({open:[],closed:[]},JSON.parse(localStorage.getItem('petpapp_trades')||'{}'))}catch(e){}
 let HIST=[];try{HIST=JSON.parse(localStorage.getItem('petpapp_hist')||'[]')}catch(e){}
@@ -1124,7 +1127,7 @@ function dayCheck(){const el=document.getElementById('lossBanner');if(!el)return
   el.innerHTML='🛑 Daily loss limit hit ('+p.toFixed(0)+'$ / limit -'+S.dayLoss+'$) — you are done for today. Best trade now is no trade.'}
  else el.style.display='none'}
 function renderStats(aggT){const el=document.getElementById('setupStats');const ks=Object.keys(aggT||{});
- el.innerHTML=ks.length?('Replay by setup (last scan): '+ks.map(k=>{const a=aggT[k],n=a.w+a.l;return k+' <b>'+a.w+'-'+a.l+'</b>'+(n?' ('+Math.round(100*a.w/n)+'%)':'')}).join(' · ')):''}
+ el.innerHTML=ks.length?('Mini-backtest by setup <span class="sub">(this scan\'s signals replayed on recent candles — not your trades)</span>: '+ks.map(k=>{const a=aggT[k],n=a.w+a.l;return k+' <b>'+a.w+'-'+a.l+'</b>'+(n?' ('+Math.round(100*a.w/n)+'%)':'')}).join(' · ')):''}
 function pushHist(strong,scanned){
  const best=results.length?results.slice().sort((a,b)=>b.score-a.score)[0]:null;
  HIST.unshift({ts:Date.now(),mode:S.mode,profile:S.profile,strong,scanned,best:best?best.sym+' '+best.score:'—'});
@@ -1185,7 +1188,7 @@ async function scanOne(sym){
      const fundAnn=+m.funding*24*365*100;const mi=MINFO[sym]||{};
      const row={sym,setup:s2.type,dir:s2.dir,score:s2.score,parts:s2.parts,checks:s2.checks,price:mark,
       entry:s2.entry*ratio,stop:s2.stop*ratio,target:s2.target*ratio,rr:s2.rr,atrPct:s2.atr/lastClose*100,
-      adx:s2.adx,rsiV:s2.rsi,bias:s2.bias,fundAnn,vol24h:+m.volume_24h,maxLev:mi.maxLev||null,
+      adx:s2.adx,rsiV:s2.rsi,bias:s2.bias,fundAnn,oiRoc:((MK[sym]||{}).oiRoc!=null?(MK[sym]||{}).oiRoc:null),vol24h:+m.volume_24h,maxLev:mi.maxLev||null,
       tf:mode.trig,ctf:mode.conf,src:trig.src,replayW:rp.w,replayL:rp.l,replayN:rp.w+rp.l,
       flags:{lowVol:+m.volume_24h<50000,crowded:(s2.dir==='long'&&fundAnn>30)||(s2.dir==='short'&&fundAnn<-30),stale:false}};
      row.volReg=volRegimeOf(trig.h,trig.l,trig.c);row.offHrs=!sessionInfo().hot;
@@ -1465,13 +1468,15 @@ function openPacifica(){const t=Date.now();try{location.href='pacifica://'}catch
  setTimeout(()=>{if(Date.now()-t<2500)window.open('https://app.pacifica.fi/trade','_blank')},700)}
 function postScan(all,aggT){
  for(const m of all){priceMap[m.symbol]=+m.mark;const y=+m.yesterday_price;
-  MK[m.symbol]=Object.assign(MK[m.symbol]||{},{p:+m.mark,chg:y>0?(+m.mark-y)/y*100:null,fund:+m.funding*24*365*100,ts:Date.now()})}
+  const _pv=MK[m.symbol]||{};const _oi=+m.open_interest||null;
+  const _roc=(_pv.oi&&_oi)?Math.round(((_oi-_pv.oi)/_pv.oi)*10000)/100:(_pv.oiRoc!=null?_pv.oiRoc:null);
+  MK[m.symbol]=Object.assign(_pv,{p:+m.mark,chg:y>0?(+m.mark-y)/y*100:null,fund:+m.funding*24*365*100,oi:_oi,oiRoc:_roc,ts:Date.now()})}
  try{localStorage.setItem('petpapp_prices',JSON.stringify(priceMap))}catch(e){}
  try{localStorage.setItem('petpapp_mk',JSON.stringify(MK))}catch(e){}
  renderHeat(all);renderSent(all);renderFavs();renderTrades();renderStats(aggT);
  sbUpdate();alertsCheck();econCheck();renderAlerts();
  invalidationCheck();favRipenCheck();dayCheck();
- renderVerdict();renderRisk();renderJournal();evictMK();renderLiveAccount();try{apexRegime();apexLogSetups();apexResolve();renderApex();apexdbPushMarket();apexActiveResolve()}catch(e){}
+ renderVerdict();renderRisk();renderJournal();evictMK();renderLiveAccount();try{apexRegime();apexLogSetups();apexResolve();renderApex();apexdbPushMarket();apexActiveResolve();apexAutoRead()}catch(e){}
  const reg=btcRegime();
  document.getElementById('btcReg').innerHTML='₿ regime: '+(reg==='long'?'<span class="up">▲ up — longs favored</span>':reg==='short'?'<span class="dn">▼ down — careful with longs</span>':'<span class="muted">neutral</span>');
  document.getElementById('sessLbl').textContent='Session: '+sessionInfo().l;
@@ -2241,7 +2246,7 @@ function apexLogSetups(){
    entry:r.entry,stop:r.stop,target:r.target,score:r.score,
    feat:{rsi:r.rsiV!=null?+(+r.rsiV).toFixed(1):null,adx:r.adx!=null?+(+r.adx).toFixed(1):null,
     atrPct:+(+r.atrPct||0).toFixed(2),fund:+(+r.fundAnn||0).toFixed(1),rr:+(+r.rr||0).toFixed(2),
-    vr:r.volReg||'normal',off:r.offHrs?1:0},
+    oiRoc:(r.oiRoc!=null?+(+r.oiRoc).toFixed(2):null),vr:r.volReg||'normal',off:r.offHrs?1:0},
    regime:APEXREG.label,res:0,result:null,r:null});added++}
  if(added)apexSave()}
 function apexResolve(){
@@ -2277,12 +2282,13 @@ function apexCal(setup,dir,regime,sc){
 function apexAnalogs(r,kk){
  const k=kk||20;const res=APEXMEM.setups.filter(s=>s.res&&s.result!=='x'&&s.feat);
  if(res.length<8)return{n:res.length,insufficient:true};
- const f={rsi:r.rsiV,adx:r.adx,atrPct:r.atrPct,fund:r.fundAnn};
+ const f={rsi:r.rsiV,adx:r.adx,atrPct:r.atrPct,fund:r.fundAnn,oiRoc:r.oiRoc};
  const scored=res.map(s=>{const g=s.feat;let d=0;
   d+=Math.pow(((f.rsi||50)-(g.rsi||50))/25,2);
   d+=Math.pow(((f.adx||20)-(g.adx||20))/15,2);
   d+=Math.pow(((f.atrPct||1)-(g.atrPct||1))/1.5,2);
   d+=Math.pow(((f.fund||0)-(g.fund||0))/30,2);
+  d+=Math.pow(((f.oiRoc||0)-(g.oiRoc||0))/5,2);
   d+=(s.dir===r.dir?0:1.5);
   d+=(s.regime===APEXREG.label?0:0.8);
   d+=(s.setup===r.setup?0:0.6);
@@ -2294,6 +2300,15 @@ function apexVeto(r){
  const rs=[];let lvl='ok';const long=r.dir==='long';
  if((long&&r.fundAnn>40)||(!long&&r.fundAnn<-40)){lvl='veto';
   rs.push('crowded '+(long?'long':'short')+': funding '+r.fundAnn.toFixed(0)+'%/yr at extremes — squeeze risk against you')}
+ if(r.oiRoc!=null){
+  if(((long&&r.fundAnn>25)||(!long&&r.fundAnn<-25))&&r.oiRoc>2){if(lvl!=='veto')lvl='warn';
+   rs.push('crowd building: funding '+r.fundAnn.toFixed(0)+'%/yr with OI up '+r.oiRoc.toFixed(1)+'% — squeeze fuel')}
+  if(long&&MK[r.sym]&&MK[r.sym].chg>0&&r.oiRoc<-2){if(lvl!=='veto')lvl='warn';
+   rs.push('weak rally: price up but open interest falling '+r.oiRoc.toFixed(1)+'%')}
+ }
+ try{var _pp=apexPersonal(r.setup,r.dir);
+  if(_pp&&_pp.n>=6&&_pp.wr<0.3){if(lvl!=='veto')lvl='warn';
+   rs.push('your own record on this setup is '+_pp.w+'W\u2013'+_pp.l+'L — it has not worked for YOU')}}catch(e){}
  if(APEXREG.label==='risk-off'&&long){lvl='veto';
   rs.push('risk-off regime: longs historically bleed in liquidation-driven tape')}
  try{const evs=ECON.concat(nfpDates());const now=Date.now();
@@ -2309,6 +2324,9 @@ function apexScoreAll(){
   const cal=apexCal(r.setup,r.dir,APEXREG.label,r.score);
   r.apexP=cal.p;r.apexN=cal.n;r.apexScope=cal.scope;
   r.apex=cal.p!=null?Math.round(100*(0.5*cal.p+0.5*(r.score/100))):r.score;
+  var pers=apexPersonal(r.setup,r.dir)||apexPersonal(r.setup,null);
+  r.pers=pers;
+  if(pers){var _wgt=pers.n/(pers.n+10);r.apex=Math.max(1,Math.min(100,Math.round(r.apex+(pers.wr-0.5)*16*_wgt)))}
   const v=apexVeto(r);r.apexVeto=v.lvl;r.apexWhy=v.rs;
   r.apexConf=cal.p==null?'building':cal.n>=30?'high':'medium'}}
 function renderApex(){
@@ -2317,13 +2335,14 @@ function renderApex(){
  const resolved=APEXMEM.setups.filter(s=>s.res&&s.result!=='x');
  const wins=resolved.filter(s=>s.result==='w').length;
  let h='<b>Regime: '+APEXREG.label.toUpperCase()+'</b> <span class="sub">— '+(APEXREG.why||'scan to classify the market')+'</span>';
- const losses=resolved.length-wins;
- const avgR=resolved.length?(resolved.reduce((a,x)=>a+(x.r!=null?x.r:0),0)/resolved.length):0;
+ let Aw=wins,An=resolved.length,AavgR=An?(resolved.reduce((a,x)=>a+(x.r!=null?x.r:0),0)/An):0,fromDb=false;
+ if(typeof APEXDB!=='undefined'&&APEXDB.tot&&APEXDB.tot.n>=An){Aw=APEXDB.tot.w;An=APEXDB.tot.n;AavgR=APEXDB.tot.avgR;fromDb=true}
+ const Al=An-Aw;
  const _td=new Date().toISOString().slice(0,10);
  const _isT=x=>x.resTs&&new Date(x.resTs).toISOString().slice(0,10)===_td;
  const tw=resolved.filter(x=>_isT(x)&&x.result==='w').length,tl=resolved.filter(x=>_isT(x)&&x.result==='l').length;
  const pend=APEXMEM.setups.filter(x=>!x.res).length;
- h+='<br><span class="sub">\uD83C\uDFC1 Scoreboard: <b style="color:var(--green)">'+wins+'W</b>–<b style="color:var(--red)">'+losses+'L</b>'+(resolved.length?' ('+Math.round(100*wins/resolved.length)+'%)':'')+' all-time · today <b>'+tw+'W–'+tl+'L</b> · avg '+(avgR>=0?'+':'')+avgR.toFixed(2)+'R · '+APEXMEM.setups.length+' in memory'+(pend?' · '+pend+' playing out now':'')+'</span>';
+ h+='<br><span class="sub">\uD83C\uDFC1 Scoreboard'+(fromDb?' <span title="all-time from database">☁</span>':'')+': <b style="color:var(--green)">'+Aw+'W</b>–<b style="color:var(--red)">'+Al+'L</b>'+(An?' ('+Math.round(100*Aw/An)+'%)':'')+' all-time · today <b>'+tw+'W–'+tl+'L</b> · avg '+(AavgR>=0?'+':'')+AavgR.toFixed(2)+'R · '+APEXMEM.setups.length+' in memory'+(pend?' · '+pend+' playing out now':'')+'</span>';
  if(!results.length){el.innerHTML=h+'<br><span class="muted" style="display:block;margin-top:6px">Run a scan — APEX logs every setup, checks what actually happened on later scans, ranks the whole board, and vetoes historically bad trades.</span>';return}
  apexScoreAll();
  const ranked=results.slice().sort((a,b)=>(b.apex||0)-(a.apex||0));
@@ -2333,9 +2352,10 @@ function renderApex(){
  h+=(ok.slice(0,3).map(r=>{
   const ix=results.indexOf(r);const an=apexAnalogs(r);
   return '<div class="mv" style="cursor:pointer;margin-top:4px" onclick="showDetail('+ix+')"><b>'+r.sym+'</b> <span class="pill '+r.dir+'">'+(r.dir==='long'?'▲':'▼')+'</span> '+r.setup+
-  ' · <b>APEX '+r.apex+'</b>'+
+  (r.oiRoc!=null?' <span class="sub">OI '+(r.oiRoc>0?'+':'')+r.oiRoc.toFixed(1)+'%</span>':'')+' · <b>APEX '+r.apex+'</b>'+
   (r.apexP!=null?' <span class="sub">P(win)≈'+Math.round(r.apexP*100)+'% · '+r.apexN+' precedents ('+r.apexScope+') · confidence '+r.apexConf+'</span>':' <span class="sub">calibrating — confluence score until enough outcomes accrue</span>')+
   (an&&!an.insufficient?'<br><span class="sub">nearest analogs: '+an.w+'/'+an.n+' won · e.g. '+an.ex.join(', ')+'</span>':'')+
+  (r.pers?'<br><span class="sub">your record on this setup: <b>'+r.pers.w+'W\u2013'+r.pers.l+'L</b>'+(r.pers.wr>=0.5?' 👍':' ⚠️')+'</span>':'')+
   (r.apexVeto==='warn'?'<br><span style="color:var(--amber)">⚠ '+r.apexWhy.join(' · ')+'</span>':'')+
   '<br><a href="javascript:void(0)" class="sub" onclick="event.stopPropagation();apexCommittee('+ix+')">🤖 ask the AI committee</a>'+'</div>'}).join('')||'<span class="muted">none pass the veto right now — that is the system protecting you</span>');
  if(vetoed.length){h+='<div style="margin-top:8px"><b>🚫 Vetoed ('+vetoed.length+')</b> <span class="sub">— blocked by evidence, tap symbol in table to inspect</span></div>'+
@@ -2383,25 +2403,45 @@ function apexdbPushMarket(){
     adx:k.adxV!=null?k.adxV:null,atr_pct:k.atrPct!=null?k.atrPct:null,trend:k.tr||null});
    if(rows.length>=60)break}
   if(rows.length)sbReq('POST','market_snapshots',rows,'return=minimal').catch(()=>{})}catch(e){}}
+async function apexdbScore(){
+ try{
+  const rows=await sbReq('GET','outcomes?select=result,realized_r&limit=10000');
+  if(!rows)return;
+  let w=0,l=0,sum=0,n=0;
+  for(const o of rows){
+   if(o.result==='w'){w++;n++;sum+=(o.realized_r!=null?o.realized_r:0)}
+   else if(o.result==='l'){l++;n++;sum+=(o.realized_r!=null?o.realized_r:-1)}}
+  APEXDB.tot={w:w,l:l,n:n,avgR:n?sum/n:0};
+  try{renderApex()}catch(e){}
+ }catch(e){}}
 async function apexdbHydrate(){
  try{
-  const rows=await sbReq('GET','setups?select=key,ts,symbol,setup_type,direction,tf,entry,stop,target,score,features,regime,outcomes(result,realized_r)&order=ts.desc&limit=900');
+  const rows=await sbReq('GET','setups?select=key,ts,symbol,setup_type,direction,tf,entry,stop,target,score,features,regime,outcomes(result,realized_r,resolved_ts)&order=ts.desc&limit=900');
   if(!rows)return;
   APEXDB.n=rows.length;apexdbBadge();
-  const have=new Set(APEXMEM.setups.map(s=>s.key));let merged=0;
+  const byKey={};for(const s2 of APEXMEM.setups)byKey[s2.key]=s2;
+  let merged=0,adopted=0;const needPush=[];
   for(const d of rows){
-   if(have.has(d.key))continue;
    const oc=Array.isArray(d.outcomes)?d.outcomes[0]:d.outcomes;
+   const loc=byKey[d.key];
+   if(loc){
+    if(oc&&!loc.res){loc.res=1;loc.result=oc.result;loc.r=oc.realized_r;
+     loc.resTs=oc.resolved_ts?Date.parse(oc.resolved_ts):Date.now();adopted++}
+    else if(!oc&&loc.res&&loc.result&&loc.result!=='x')needPush.push(loc);
+    continue}
    APEXMEM.setups.push({key:d.key,ts:Date.parse(d.ts),sym:d.symbol,setup:d.setup_type,dir:d.direction,
     tf:d.tf,entry:d.entry,stop:d.stop,target:d.target,score:d.score,feat:d.features||{},
-    regime:d.regime,res:oc?1:0,result:oc?oc.result:null,r:oc?oc.realized_r:null});merged++}
-  if(merged){APEXMEM.setups.sort((a,b)=>a.ts-b.ts);apexSave();try{renderApex()}catch(e){}}
+    regime:d.regime,res:oc?1:0,result:oc?oc.result:null,r:oc?oc.realized_r:null,
+    resTs:(oc&&oc.resolved_ts)?Date.parse(oc.resolved_ts):null});merged++}
+  if(merged||adopted){APEXMEM.setups.sort((a,b)=>a.ts-b.ts);apexSave();try{renderApex()}catch(e){}}
+  for(const p of needPush)apexdbPushOutcome(p);
   // local rows the DB doesn't have yet (e.g. pre-DB era) — push them up
   const dbKeys=new Set(rows.map(d=>d.key));
   const missing=APEXMEM.setups.filter(s=>!dbKeys.has(s.key));
   if(missing.length){apexdbPushSetups(missing);
    for(const p of missing)if(p.res&&p.result&&p.result!=='x')apexdbPushOutcome(p)}
-  sbReq('POST','audit_log',[{actor:'app',action:'app_boot',details:{ver:(typeof APP_VER!=='undefined'?APP_VER:'?'),merged:merged,pushed:missing.length}}],'return=minimal').catch(()=>{})
+  apexdbScore();
+  sbReq('POST','audit_log',[{actor:'app',action:'app_boot',details:{ver:(typeof APP_VER!=='undefined'?APP_VER:'?'),merged:merged,adopted:adopted,pushed:missing.length}}],'return=minimal').catch(()=>{})
  }catch(e){}}
 /* ---- wrap the APEX engine so every event syncs ---- */
 (function(){
@@ -2415,7 +2455,8 @@ async function apexdbHydrate(){
   const pend=new Set(APEXMEM.setups.filter(s=>!s.res).map(s=>s.key));
   const ch=_res();
   if(ch){for(const p of APEXMEM.setups)
-   if(p.res&&pend.has(p.key)&&p.result&&p.result!=='x')apexdbPushOutcome(p)}
+   if(p.res&&pend.has(p.key)&&p.result&&p.result!=='x')apexdbPushOutcome(p);
+   setTimeout(function(){try{apexdbScore()}catch(e){}},4000)}
   return ch};
  const _reg=apexRegime;
  apexRegime=function(){
@@ -2427,8 +2468,9 @@ async function apexdbHydrate(){
 /* ============ APEX AI (Gemini committee + daily read, via Edge Function) ============ */
 function apexEsc(t){return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
 function apexAiFmt(t){
- return apexEsc(t).replace(/^(BULL CASE:|BEAR CASE:|RISK OFFICER:|VERDICT:|REGIME:|OPPORTUNITIES:|DISCIPLINE:|BOTTOM LINE:)/gm,'<b>$1</b>').replace(/\n/g,'<br>')}
+ return apexEsc(t).replace(/^(BULL CASE:|BEAR CASE:|RISK OFFICER:|VERDICT:|REGIME:|OPPORTUNITIES:|DISCIPLINE:|BOTTOM LINE:|CALL:|WHY:|CONDITIONS:|WATCH:)/gm,'<b>$1</b>').replace(/\n/g,'<br>')}
 function apexPromptFor(kind,data){
+ if(kind==='verdict')return 'You are the head analyst inside APEX Trading OS, a personal quantitative perp-futures system. From the DATA below give the trader a market verdict. HARD RULES: advisory; base everything on the data given; never invent numbers; plain language for a newer trader; under 200 words.\n\nDATA:\n'+JSON.stringify(data)+'\n\nReply in EXACTLY this format:\nCALL: (exactly one of: GO, CAUTION, STAND ASIDE)\nWHY: (2-3 sentences on the regime and what it means today)\nCONDITIONS: (2-4 sentences: what kinds of trades the calibrated stats favor right now, and what to avoid)\nWATCH: (1-2 sentences: funding extremes, events, or risks to watch)';
  if(kind==='report')return 'You are the daily analyst inside APEX Trading OS, a personal quantitative perp-futures system. Write today\'s market read from the DATA below. HARD RULES: advisory only; never invent numbers; plain language for a newer trader; under 300 words.\n\nDATA:\n'+JSON.stringify(data)+'\n\nReply in EXACTLY this format:\nREGIME: (2-3 sentences on what today\'s regime means practically)\nOPPORTUNITIES: (2-4 sentences on the ranked setups, referencing their calibrated stats)\nDISCIPLINE: (2-3 sentences: what the memory/veto data says to avoid today)\nBOTTOM LINE: (1-2 sentences)';
  return 'You are the AI trade committee inside APEX Trading OS, a personal quantitative perp-futures system. You receive a QUANTITATIVE PACKAGE computed by the system\'s statistical engine. HARD RULES: you are advisory only; you may NOT invent numbers, probabilities, or price targets; you may NOT contradict the calibrated statistics, but you MAY argue about their reliability; if the veto blocked the trade you may not overrule it. Be plain-spoken for a newer trader. Keep the whole reply under 250 words.\n\nQUANTITATIVE PACKAGE:\n'+JSON.stringify(data)+'\n\nReply in EXACTLY this format:\nBULL CASE: (2-3 sentences, strongest honest argument for the trade)\nBEAR CASE: (2-3 sentences, strongest honest argument against it)\nRISK OFFICER: (2-3 sentences on position size, stop placement, funding/regime/event risks)\nVERDICT: (1-2 sentences synthesis + one tag: CONFIDENCE HIGH, CONFIDENCE MEDIUM, or CONFIDENCE LOW)'}
 async function apexAI(kind,data){
@@ -2510,6 +2552,68 @@ async function apexActiveResolve(){
  }catch(e){}
  _apexAR=false}
 try{setInterval(function(){try{apexActiveResolve()}catch(e){}},300000)}catch(e){}
+/* ============ APEX AI VERDICT (auto-read powers the regime box) ============ */
+var APEXAIREAD=null;
+try{APEXAIREAD=JSON.parse(localStorage.getItem('petp_apex_airead')||'null')}catch(e){}
+function applyAiVerdict(){
+ try{
+  if(!APEXAIREAD||!APEXAIREAD.text)return;
+  if(Date.now()-APEXAIREAD.ts>45*60000)return; // stale — keep math verdict
+  var t=APEXAIREAD.text;
+  var m=t.match(/CALL:\s*(GO|CAUTION|STAND ASIDE)/i);
+  var call=m?m[1].toUpperCase():null;
+  var vc=document.getElementById('vCall'),vb=document.getElementById('vBody');
+  if(call&&vc){vc.textContent=(call==='GO'?'\u2705 GO':call==='CAUTION'?'\u26A0\uFE0F CAUTION':'\u26D4 STAND ASIDE')+' \u2014 AI market read'}
+  if(vb){var body=t.replace(/CALL:[^\n]*\n?/i,'');
+   vb.innerHTML=apexAiFmt(body)+'<div class="sub" style="margin-top:5px">\uD83E\uDD16 written by AI from live regime + memory data \u00B7 updated '+new Date(APEXAIREAD.ts).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})+' \u00B7 risk gates stay math-based</div>'}
+ }catch(e){}}
+var _apexARd=false;
+async function apexAutoRead(force){
+ if(_apexARd)return;
+ var key=((S.gemKey||((document.getElementById('gemKey')||{}).value||''))+'').trim();
+ if(!key)return;
+ if(!force&&APEXAIREAD&&Date.now()-APEXAIREAD.ts<30*60000){applyAiVerdict();return}
+ _apexARd=true;
+ try{
+  apexRegime();try{apexScoreAll()}catch(e){}
+  var resolved=APEXMEM.setups.filter(function(x){return x.res&&x.result!=='x'});
+  var wins=resolved.filter(function(x){return x.result==='w'}).length;
+  var ranked=results.slice().sort(function(a,b){return (b.apex||0)-(a.apex||0)}).slice(0,5)
+   .map(function(r){return{symbol:r.sym,dir:r.dir,setup:r.setup,apex:r.apex,p_win:r.apexP!=null?+r.apexP.toFixed(2):null,veto:r.apexVeto,why:(r.apexWhy||[]).slice(0,2)}});
+  var data={now:new Date().toISOString(),market_regime:APEXREG.label,regime_detail:APEXREG.why,regime_features:APEXREG.feat,
+   memory:{setups_logged:APEXMEM.setups.length,resolved:resolved.length,
+    target_first_rate:resolved.length?+(wins/resolved.length).toFixed(2):null,
+    db_totals:(typeof APEXDB!=='undefined'&&APEXDB.tot)?APEXDB.tot:null},
+   ranked_opportunities:ranked,
+   open_trades:TR.open.map(function(t){return{symbol:t.sym,dir:t.dir}})};
+  var t=await apexAI('verdict',data);
+  APEXAIREAD={ts:Date.now(),text:t};
+  try{localStorage.setItem('petp_apex_airead',JSON.stringify(APEXAIREAD))}catch(e){}
+  applyAiVerdict();
+ }catch(e){}
+ _apexARd=false}
+(function(){
+ var _rv=renderVerdict;
+ renderVerdict=function(){_rv();applyAiVerdict()};
+})();
+/* ===== mode/profile plain-language helper ===== */
+var MODE_DESC={scalp:'5-min candles \u00b7 trades last minutes\u2013hours \u00b7 watch the screen',
+ day:'15-min candles \u00b7 trades last hours\u2013a day',
+ m30:'30-min candles \u00b7 trades last hours\u20132 days',
+ h1:'1-hour candles \u00b7 trades last 1\u20134 days',
+ swing:'4-hour candles \u00b7 trades last days\u2013weeks'};
+var PROF_DESC={conservative:'strictest filters, fewer but higher-quality signals (2:1 reward minimum)',
+ balanced:'moderate filters, adds bounce/rejection setups (1.5:1 minimum)',
+ aggressive:'loosest filters, most signals and most noise (1.2:1 minimum)'};
+function segHelpUpd(){try{var el=document.getElementById('segHelp');if(!el)return;
+ el.innerHTML='<b>'+(MODES[S.mode]?MODES[S.mode].label:'')+'</b>: '+(MODE_DESC[S.mode]||'')+' \u00b7 <b>'+(PROFILES[S.profile]?PROFILES[S.profile].label:'')+'</b>: '+(PROF_DESC[S.profile]||'')}catch(e){}}
+/* ===== personalization: your journal shapes your scores ===== */
+function apexPersonal(setup,dir){
+ try{
+  var rel=JR.filter(function(x){return x.setup===setup&&(!dir||x.dir===dir)&&x.pnl!=null});
+  if(rel.length<4)return null;
+  var w=rel.filter(function(x){return x.pnl>0}).length;
+  return{n:rel.length,w:w,l:rel.length-w,wr:w/rel.length}}catch(e){return null}}
 /* ============ PIN LOCK ============ */
 const PINKEY='petpapp_pin';
 let pinBuf='',lockMode='verify',lockNext=null,pinFirst='',hiddenAt=0;
@@ -2589,8 +2693,8 @@ function setAlerts(on){S.alerts=on;
  saveSettings()}
 function init(){
  try{setDoob(false)}catch(e){}
- seg('modeSeg',MODES,S.mode,k=>{S.mode=k;saveSettings();runScan()});
- seg('profSeg',PROFILES,S.profile,k=>{S.profile=k;saveSettings();runScan()});
+ seg('modeSeg',MODES,S.mode,k=>{S.mode=k;saveSettings();segHelpUpd();runScan()});
+ seg('profSeg',PROFILES,S.profile,k=>{S.profile=k;saveSettings();segHelpUpd();runScan()});segHelpUpd();
  document.getElementById('minScore').value=S.minScore==null?'':S.minScore;
  document.getElementById('acct').value=S.acct;
  document.getElementById('riskPct').value=S.riskPct;
@@ -2635,7 +2739,7 @@ function init(){
  if(restore()){results.forEach(computeSize);prevStrong=strongKeys();render()}
  document.getElementById('jReport').onclick=journalReport;document.getElementById('jCsv').onclick=exportJournal;
  document.getElementById('liveRefresh').onclick=renderLiveAccount;document.getElementById('wallet').onchange=()=>{saveSettings();renderLiveAccount();syncAcctNow();};var _as=document.getElementById('acctSync');if(_as)_as.onclick=syncAcctNow;document.getElementById('maxHeat').onchange=()=>{saveSettings();renderRisk()};
- setNet(S.net||'main');(function(){var seg=document.getElementById('netSeg');if(seg){var bs=seg.querySelectorAll('button');for(var i=0;i<bs.length;i++){(function(b){b.classList.toggle('on',b.dataset.n===(S.net||'main'));b.onclick=function(){setNet(b.dataset.n);saveSettings();var xs=seg.querySelectorAll('button');for(var k=0;k<xs.length;k++)xs[k].classList.toggle('on',xs[k].dataset.n===S.net);var nl=document.getElementById('netLabel');if(nl)nl.textContent=(S.net==='test')?'test-api.pacifica.fi':'';renderTradeStatus();runScan();setTimeout(renderLiveAccount,300);};})(bs[i]);}var nl0=document.getElementById('netLabel');if(nl0)nl0.textContent=(S.net==='test')?'test-api.pacifica.fi':'';}})();renderVerdict();renderRisk();renderJournal();renderLiveAccount();renderTradeStatus();try{renderApex()}catch(e){}try{var _vv=document.getElementById('apexVer');if(_vv)_vv.textContent='v'+APP_VER}catch(e){}try{apexdbHydrate()}catch(e){}document.getElementById('saveAgent').onclick=async()=>{try{await saveAgentKey(document.getElementById('agentKey').value,document.getElementById('agentPass').value);document.getElementById('agentKey').value='';document.getElementById('agentPass').value='';setStatus('agent key saved & armed','var(--green)')}catch(e){alert(e.message)}};var _nt=document.getElementById('newsToggle');if(_nt){_nt.checked=(S.news!==false);_nt.onchange=function(){S.news=_nt.checked;saveSettings();fetchNews();};}
+ setNet(S.net||'main');(function(){var seg=document.getElementById('netSeg');if(seg){var bs=seg.querySelectorAll('button');for(var i=0;i<bs.length;i++){(function(b){b.classList.toggle('on',b.dataset.n===(S.net||'main'));b.onclick=function(){setNet(b.dataset.n);saveSettings();var xs=seg.querySelectorAll('button');for(var k=0;k<xs.length;k++)xs[k].classList.toggle('on',xs[k].dataset.n===S.net);var nl=document.getElementById('netLabel');if(nl)nl.textContent=(S.net==='test')?'test-api.pacifica.fi':'';renderTradeStatus();runScan();setTimeout(renderLiveAccount,300);};})(bs[i]);}var nl0=document.getElementById('netLabel');if(nl0)nl0.textContent=(S.net==='test')?'test-api.pacifica.fi':'';}})();renderVerdict();renderRisk();renderJournal();renderLiveAccount();renderTradeStatus();try{renderApex()}catch(e){}try{var _vv=document.getElementById('apexVer');if(_vv)_vv.textContent='v'+APP_VER}catch(e){}try{applyAiVerdict();setTimeout(function(){apexAutoRead()},2500)}catch(e){}try{apexdbHydrate()}catch(e){}document.getElementById('saveAgent').onclick=async()=>{try{await saveAgentKey(document.getElementById('agentKey').value,document.getElementById('agentPass').value);document.getElementById('agentKey').value='';document.getElementById('agentPass').value='';setStatus('agent key saved & armed','var(--green)')}catch(e){alert(e.message)}};var _nt=document.getElementById('newsToggle');if(_nt){_nt.checked=(S.news!==false);_nt.onchange=function(){S.news=_nt.checked;saveSettings();fetchNews();};}
  (function(){var _dl=document.getElementById('dlLog');if(_dl)_dl.onclick=downloadLogs;var _ap=document.getElementById('agentPass');if(_ap)_ap.oninput=function(){var h=document.getElementById('pwHint');if(h)h.textContent=_ap.value?('strength: '+pwStrength(_ap.value)):'';};var cl=document.getElementById('chLoad');if(cl)cl.onclick=loadChartGrid;var cc=document.getElementById('chCompat');if(cc){cc.checked=!!S.chartsCompat;cc.onchange=function(){S.chartsCompat=cc.checked;saveSettings();var g=document.getElementById('chGrid');if(g&&g.style.display!=='none')loadChartGrid();};}var fc=document.getElementById('fsClose');if(fc)fc.onclick=closeFullChart;var fg=document.getElementById('fsGo');if(fg)fg.onclick=function(){var v=(document.getElementById('fsSym').value||'').trim().toUpperCase();if(v)openFullChart(v);};document.addEventListener('keydown',function(e){if(e.key==='Escape'){var o=document.getElementById('chartFS');if(o&&o.style.display==='flex')closeFullChart();}});})();
  window.addEventListener('popstate',()=>{if(document.getElementById('detail').style.display==='block')hideDetail()});
  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&Date.now()-(window._lastScanTs||0)>120000)runScan()});
