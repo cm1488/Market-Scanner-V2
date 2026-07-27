@@ -167,6 +167,11 @@ body.boom .ember{opacity:1!important;animation:none!important}
 body.boom .smoke,body.boom .smkp{opacity:0!important}
 body.boom #logo{animation:boom .85s ease-out!important}
 @keyframes boom{0%{transform:scale(1) rotate(0);filter:none}18%{transform:scale(1.5) rotate(-7deg);filter:brightness(2.4) saturate(2)}42%{transform:scale(1.75) rotate(6deg);filter:brightness(3)}100%{transform:scale(.15) rotate(24deg);opacity:0;filter:brightness(.4)}}
+.apxstrip{font-size:12px;line-height:1.5}
+.apxsb summary{cursor:pointer;list-style:none}
+.apxsb summary::-webkit-details-marker{display:none}
+.apexop{background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:9px;margin-top:6px;cursor:pointer}
+.apexop button{font-size:12px}
 </style>
 </head>
 <body>
@@ -376,7 +381,7 @@ These tabs change <b>the standards a setup must pass</b>. The indicators are the
  <div class="row">
   <label class="inl">Markets <select id="topN"><option value="15">Top 15</option><option value="30">Top 30</option><option value="50">Top 50</option><option value="999">All</option></select></label>
   <label class="inl">Min score <input type="number" id="minScore" min="0" max="100" step="5" placeholder="auto"></label>
-  <label class="inl">Auto-rescan <select id="autoSel"><option value="0">Off</option><option value="300">5 min</option><option value="900">15 min</option></select></label>
+  <label class="inl">Auto-rescan <select id="autoSel"><option value="0">Off</option><option value="300">5 min</option><option value="900">15 min</option><option value="1800">30 min</option><option value="3600">1 hour</option></select></label>
  </div>
  <div class="row" style="margin-top:8px">
   <label class="inl">Pacifica wallet <input type="text" id="wallet" placeholder="wallet address" style="width:150px"></label>
@@ -483,7 +488,7 @@ This app is educational and informational only — not financial advice. It neve
 
 <script>
 /* ============ CONFIG ============ */
-var APP_VER='20260728b';(function(){try{if('serviceWorker' in navigator){navigator.serviceWorker.getRegistrations().then(function(rs){rs.forEach(function(r){try{r.update()}catch(e){}})}).catch(function(){});}var seen=null;try{seen=localStorage.getItem('petp_ver')}catch(e){}if(seen!==APP_VER){try{localStorage.setItem('petp_ver',APP_VER)}catch(e){}if(window.caches&&caches.keys){caches.keys().then(function(ks){ks.forEach(function(k){try{caches.delete(k)}catch(e){}})}).catch(function(){});}if('serviceWorker' in navigator){navigator.serviceWorker.getRegistrations().then(function(rs){var had=rs.length;rs.forEach(function(r){try{r.unregister()}catch(e){}});if(had){setTimeout(function(){try{location.reload()}catch(e){}},400);}}).catch(function(){});}}}catch(e){}})();
+var APP_VER='20260729b';(function(){try{if('serviceWorker' in navigator){navigator.serviceWorker.getRegistrations().then(function(rs){rs.forEach(function(r){try{r.update()}catch(e){}})}).catch(function(){});}var seen=null;try{seen=localStorage.getItem('petp_ver')}catch(e){}if(seen!==APP_VER){try{localStorage.setItem('petp_ver',APP_VER)}catch(e){}if(window.caches&&caches.keys){caches.keys().then(function(ks){ks.forEach(function(k){try{caches.delete(k)}catch(e){}})}).catch(function(){});}if('serviceWorker' in navigator){navigator.serviceWorker.getRegistrations().then(function(rs){var had=rs.length;rs.forEach(function(r){try{r.unregister()}catch(e){}});if(had){setTimeout(function(){try{location.reload()}catch(e){}},400);}}).catch(function(){});}}}catch(e){}})();
 let API='https://api.pacifica.fi/api/v1';
 function setNet(n){S.net=(n==='test')?'test':'main';API=S.net==='test'?'https://test-api.pacifica.fi/api/v1':'https://api.pacifica.fi/api/v1';AGENT=null;ARMED=false;}
 const MODES={
@@ -2329,12 +2334,12 @@ function apexScoreAll(){
   if(pers){var _wgt=pers.n/(pers.n+10);r.apex=Math.max(1,Math.min(100,Math.round(r.apex+(pers.wr-0.5)*16*_wgt)))}
   const v=apexVeto(r);r.apexVeto=v.lvl;r.apexWhy=v.rs;
   r.apexConf=cal.p==null?'building':cal.n>=30?'high':'medium'}}
+function apexAgo(ts){if(!ts)return null;var m=Math.round((Date.now()-ts)/60000);return m<1?'just now':m<60?m+' min ago':Math.round(m/60)+' h ago'}
 function renderApex(){
  const el=document.getElementById('apexBody');if(!el)return;
  apexRegime();
  const resolved=APEXMEM.setups.filter(s=>s.res&&s.result!=='x');
  const wins=resolved.filter(s=>s.result==='w').length;
- let h='<b>Regime: '+APEXREG.label.toUpperCase()+'</b> <span class="sub">— '+(APEXREG.why||'scan to classify the market')+'</span>';
  let Aw=wins,An=resolved.length,AavgR=An?(resolved.reduce((a,x)=>a+(x.r!=null?x.r:0),0)/An):0,fromDb=false;
  if(typeof APEXDB!=='undefined'&&APEXDB.tot&&APEXDB.tot.n>=An){Aw=APEXDB.tot.w;An=APEXDB.tot.n;AavgR=APEXDB.tot.avgR;fromDb=true}
  const Al=An-Aw;
@@ -2342,24 +2347,47 @@ function renderApex(){
  const _isT=x=>x.resTs&&new Date(x.resTs).toISOString().slice(0,10)===_td;
  const tw=resolved.filter(x=>_isT(x)&&x.result==='w').length,tl=resolved.filter(x=>_isT(x)&&x.result==='l').length;
  const pend=APEXMEM.setups.filter(x=>!x.res).length;
- h+='<br><span class="sub">\uD83C\uDFC1 Scoreboard'+(fromDb?' <span title="all-time from database">☁</span>':'')+': <b style="color:var(--green)">'+Aw+'W</b>–<b style="color:var(--red)">'+Al+'L</b>'+(An?' ('+Math.round(100*Aw/An)+'%)':'')+' all-time · today <b>'+tw+'W–'+tl+'L</b> · avg '+(AavgR>=0?'+':'')+AavgR.toFixed(2)+'R · '+APEXMEM.setups.length+' in memory'+(pend?' · '+pend+' playing out now':'')+'</span>';
- if(!results.length){el.innerHTML=h+'<br><span class="muted" style="display:block;margin-top:6px">Run a scan — APEX logs every setup, checks what actually happened on later scans, ranks the whole board, and vetoes historically bad trades.</span>';return}
+ var dbOk=(typeof APEXDB!=='undefined'&&APEXDB.ok===true);
+ var robo=(typeof APEXDB!=='undefined'&&APEXDB.robotTs)?apexAgo(APEXDB.robotTs):null;
+ var roboOld=(typeof APEXDB!=='undefined'&&APEXDB.robotTs)?(Date.now()-APEXDB.robotTs>45*60000):true;
+ let h='<div class="apxstrip">🧠 <b>'+APEXMEM.setups.length+'</b> setups remembered · '+(dbOk?'<span style="color:var(--green)">☁ saved to cloud ✓</span>':'<span style="color:var(--amber)">☁ cloud offline — saving on this device only</span>')+' · '+(robo?(roboOld?'<span style="color:var(--amber)">🤖 robot last ran '+robo+' ⚠</span>':'<span style="color:var(--green)">🤖 robot ran '+robo+' ✓</span>'):'<span class="sub">🤖 robot: checking…</span>')+'</div>';
+ h+='<div class="sub" style="margin:4px 0 8px">Market mode: <b>'+APEXREG.label.toUpperCase()+'</b>'+(APEXREG.why?' — '+APEXREG.why:'')+'</div>';
+ var pendList=APEXMEM.setups.filter(x=>!x.res).sort((a,b)=>b.ts-a.ts);
+ h+='<details class="apxsb"'+(S.sbOpen?' open':'')+' ontoggle="S.sbOpen=this.open;try{localStorage.setItem(\'petpapp_settings\',JSON.stringify(S))}catch(e){}">'
+  +'<summary>\uD83C\uDFC1 <b>Scoreboard</b>: <b style="color:var(--green)">'+Aw+'W</b>–<b style="color:var(--red)">'+Al+'L</b>'+(An?' ('+Math.round(100*Aw/An)+'%)':'')+(fromDb?' ☁':'')+' · today '+tw+'W–'+tl+'L'+(pend?' · <b>'+pend+'</b> in progress':'')+' <span class="sub">tap for details ▾</span></summary>'
+  +'<div class="rgrid" style="margin-top:6px">'
+  +'<div class="rbox"><b><span style="color:var(--green)">'+Aw+'W</span>–<span style="color:var(--red)">'+Al+'L</span></b><span>all-time'+(An?' · '+Math.round(100*Aw/An)+'% won':'')+(fromDb?' ☁':'')+'</span></div>'
+  +'<div class="rbox"><b>'+tw+'W–'+tl+'L</b><span>today</span></div>'
+  +'<div class="rbox"><b class="'+(AavgR>=0?'up':'dn')+'">'+(AavgR>=0?'+':'')+AavgR.toFixed(2)+'R</b><span>avg per setup</span></div>'
+  +'<div class="rbox"><b>'+pend+'</b><span>in progress</span></div>'
+  +'</div>'
+  +'<div class="sub" style="margin-top:3px">'+(An?('Avg R in plain English: for every $1 risked, signals returned '+(AavgR>=0?'about $'+Math.abs(AavgR).toFixed(2)+' profit':'a loss of about $'+Math.abs(AavgR).toFixed(2))+' on average. Above +0.20R is a real edge.'):'Once setups start resolving, your win/loss record builds here automatically — on this screen and in the cloud.')+'</div>'
+  +(pendList.length?'<div style="margin-top:6px"><b style="font-size:12px">\u23F3 In progress ('+pendList.length+')</b> <span class="sub">— waiting to fill or running; the robot checks them every 20 min</span>'
+    +pendList.slice(0,10).map(p=>'<div class="sub" style="margin-top:2px"><b>'+p.sym+'</b> '+(p.dir==='long'?'\u25B2':'\u25BC')+' '+p.setup+' ('+p.tf+') · started '+apexAgo(p.ts)+' · entry '+fmt(p.entry)+' \u2192 \uD83C\uDFAF '+fmt(p.target)+' / \uD83D\uDED1 '+fmt(p.stop)+'</div>').join('')
+    +(pendList.length>10?'<div class="sub">…and '+(pendList.length-10)+' more</div>':'')+'</div>':'')
+  +'</details>';
+ if(!results.length){
+  h+='<div class="foot" style="margin-top:8px"><b>How APEX works:</b><br>1️⃣ Tap <b>Scan</b> — it checks the whole market<br>2️⃣ Read the verdict box up top (the AI writes it after each scan)<br>3️⃣ Pick from <b>Best trades</b> — each shows its real historical odds<br>4️⃣ Tap one → 📊 Details → ⚡ Open on Pacifica → confirm the ticket<br>5️⃣ Every result is remembered forever — the robot keeps learning even while you sleep</div>';
+  el.innerHTML=h;return}
  apexScoreAll();
  const ranked=results.slice().sort((a,b)=>(b.apex||0)-(a.apex||0));
  const ok=ranked.filter(r=>r.apexVeto!=='veto');
  const vetoed=ranked.filter(r=>r.apexVeto==='veto');
- h+='<div style="margin-top:8px"><b>🏆 Top opportunities (whole board, ranked)</b></div>';
+ h+='<div style="margin-top:10px;margin-bottom:2px"><b>🏆 Best trades right now</b> <span class="sub">ranked across the whole market</span></div>';
  h+=(ok.slice(0,3).map(r=>{
   const ix=results.indexOf(r);const an=apexAnalogs(r);
-  return '<div class="mv" style="cursor:pointer;margin-top:4px" onclick="showDetail('+ix+')"><b>'+r.sym+'</b> <span class="pill '+r.dir+'">'+(r.dir==='long'?'▲':'▼')+'</span> '+r.setup+
-  (r.oiRoc!=null?' <span class="sub">OI '+(r.oiRoc>0?'+':'')+r.oiRoc.toFixed(1)+'%</span>':'')+' · <b>APEX '+r.apex+'</b>'+
-  (r.apexP!=null?' <span class="sub">P(win)≈'+Math.round(r.apexP*100)+'% · '+r.apexN+' precedents ('+r.apexScope+') · confidence '+r.apexConf+'</span>':' <span class="sub">calibrating — confluence score until enough outcomes accrue</span>')+
-  (an&&!an.insufficient?'<br><span class="sub">nearest analogs: '+an.w+'/'+an.n+' won · e.g. '+an.ex.join(', ')+'</span>':'')+
-  (r.pers?'<br><span class="sub">your record on this setup: <b>'+r.pers.w+'W\u2013'+r.pers.l+'L</b>'+(r.pers.wr>=0.5?' 👍':' ⚠️')+'</span>':'')+
-  (r.apexVeto==='warn'?'<br><span style="color:var(--amber)">⚠ '+r.apexWhy.join(' · ')+'</span>':'')+
-  '<br><a href="javascript:void(0)" class="sub" onclick="event.stopPropagation();apexCommittee('+ix+')">🤖 ask the AI committee</a>'+'</div>'}).join('')||'<span class="muted">none pass the veto right now — that is the system protecting you</span>');
- if(vetoed.length){h+='<div style="margin-top:8px"><b>🚫 Vetoed ('+vetoed.length+')</b> <span class="sub">— blocked by evidence, tap symbol in table to inspect</span></div>'+
-  vetoed.slice(0,4).map(r=>'<div class="sub" style="margin-top:3px"><b>'+r.sym+'</b> '+r.setup+' — '+r.apexWhy.join(' · ')+'</div>').join('')}
+  var odds=r.apexP!=null?('≈<b>'+Math.round(r.apexP*100)+'% chance</b> from '+r.apexN+' similar past setups · '+r.apexConf+' confidence'):'still calibrating — score is from confluence for now';
+  return '<div class="apexop" onclick="showDetail('+ix+')">'
+   +'<div><b style="font-size:15px">'+r.sym+'</b> <span class="pill '+r.dir+'">'+(r.dir==='long'?'▲ LONG':'▼ SHORT')+'</span> <span class="sub">'+r.setup+'</span><b style="float:right">APEX '+r.apex+'</b></div>'
+   +'<div class="sub" style="margin-top:2px">'+odds+(r.oiRoc!=null?' · OI '+(r.oiRoc>0?'+':'')+r.oiRoc.toFixed(1)+'%':'')+'</div>'
+   +(an&&!an.insufficient?'<div class="sub">similar setups: '+an.w+'/'+an.n+' won · e.g. '+an.ex.join(', ')+'</div>':'')
+   +(r.pers?'<div class="sub">your own record on this setup: <b>'+r.pers.w+'W–'+r.pers.l+'L</b>'+(r.pers.wr>=0.5?' 👍':' ⚠️')+'</div>':'')
+   +(r.apexVeto==='warn'?'<div style="color:var(--amber);font-size:12px">⚠ '+r.apexWhy.join(' · ')+'</div>':'')
+   +'<div style="margin-top:5px"><button class="ghost" onclick="event.stopPropagation();showDetail('+ix+')">📊 Details & chart</button> <button class="ghost" onclick="event.stopPropagation();apexCommittee('+ix+')">🤖 Ask the AI</button></div>'
+  +'</div>'}).join('')
+  ||'<div class="sub">None pass the safety checks right now — that IS the system working. Wait for better conditions or scan again later.</div>');
+ if(vetoed.length){h+='<div style="margin-top:8px"><b>🚫 Blocked for your safety ('+vetoed.length+')</b> <span class="sub">— the reasons are the lesson</span></div>'
+  +vetoed.slice(0,4).map(r=>'<div class="sub" style="margin-top:3px"><b>'+r.sym+'</b> '+r.setup+' — '+r.apexWhy.join(' · ')+'</div>').join('')}
  el.innerHTML=h;apexSave()}
 
 /* ============ APEX DB SYNC (Supabase memory spine — Sprint 1) ============ */
@@ -2440,7 +2468,7 @@ async function apexdbHydrate(){
   const missing=APEXMEM.setups.filter(s=>!dbKeys.has(s.key));
   if(missing.length){apexdbPushSetups(missing);
    for(const p of missing)if(p.res&&p.result&&p.result!=='x')apexdbPushOutcome(p)}
-  apexdbScore();
+  apexdbScore();apexdbRobot();
   sbReq('POST','audit_log',[{actor:'app',action:'app_boot',details:{ver:(typeof APP_VER!=='undefined'?APP_VER:'?'),merged:merged,adopted:adopted,pushed:missing.length}}],'return=minimal').catch(()=>{})
  }catch(e){}}
 /* ---- wrap the APEX engine so every event syncs ---- */
@@ -2606,7 +2634,7 @@ var PROF_DESC={conservative:'strictest filters, fewer but higher-quality signals
  balanced:'moderate filters, adds bounce/rejection setups (1.5:1 minimum)',
  aggressive:'loosest filters, most signals and most noise (1.2:1 minimum)'};
 function segHelpUpd(){try{var el=document.getElementById('segHelp');if(!el)return;
- el.innerHTML='<b>'+(MODES[S.mode]?MODES[S.mode].label:'')+'</b>: '+(MODE_DESC[S.mode]||'')+' \u00b7 <b>'+(PROFILES[S.profile]?PROFILES[S.profile].label:'')+'</b>: '+(PROF_DESC[S.profile]||'')}catch(e){}}
+ el.innerHTML='<b>'+(MODES[S.mode]?MODES[S.mode].label:'')+'</b>: '+(MODE_DESC[S.mode]||'')+' \u00b7 <b>'+(PROFILES[S.profile]?PROFILES[S.profile].label:'')+'</b>: '+(PROF_DESC[S.profile]||'')+' \u00b7 rescan: '+(S.auto>0?(S.auto>=3600?(S.auto/3600)+'h auto':(S.auto/60)+'m auto'):'manual')}catch(e){}}
 /* ===== personalization: your journal shapes your scores ===== */
 function apexPersonal(setup,dir){
  try{
@@ -2614,6 +2642,11 @@ function apexPersonal(setup,dir){
   if(rel.length<4)return null;
   var w=rel.filter(function(x){return x.pnl>0}).length;
   return{n:rel.length,w:w,l:rel.length-w,wr:w/rel.length}}catch(e){return null}}
+/* ===== robot liveness (last heartbeat run, from audit_log) ===== */
+async function apexdbRobot(){try{
+ const r=await sbReq('GET','audit_log?action=eq.heartbeat_run&select=ts&order=ts.desc&limit=1');
+ if(r&&r.length){APEXDB.robotTs=Date.parse(r[0].ts);try{renderApex()}catch(e){}}}catch(e){}}
+try{setInterval(function(){try{apexdbRobot()}catch(e){}},600000)}catch(e){}
 /* ============ PIN LOCK ============ */
 const PINKEY='petpapp_pin';
 let pinBuf='',lockMode='verify',lockNext=null,pinFirst='',hiddenAt=0;
@@ -2693,7 +2726,7 @@ function setAlerts(on){S.alerts=on;
  saveSettings()}
 function init(){
  try{setDoob(false)}catch(e){}
- seg('modeSeg',MODES,S.mode,k=>{S.mode=k;saveSettings();segHelpUpd();runScan()});
+ seg('modeSeg',MODES,S.mode,k=>{S.mode=k;var _rec={scalp:300,day:900,m30:1800,h1:3600,swing:3600}[k];if(S.auto>0&&_rec&&S.auto!==_rec){setAuto(_rec);var _as=document.getElementById('autoSel');if(_as)_as.value=String(_rec);setStatus('auto-rescan matched to '+MODES[k].label+' mode: every '+(_rec>=3600?(_rec/3600)+' hour':(_rec/60)+' min'),'var(--muted)')}saveSettings();segHelpUpd();runScan()});
  seg('profSeg',PROFILES,S.profile,k=>{S.profile=k;saveSettings();segHelpUpd();runScan()});segHelpUpd();
  document.getElementById('minScore').value=S.minScore==null?'':S.minScore;
  document.getElementById('acct').value=S.acct;
