@@ -26,18 +26,29 @@ async function pacifica(path) {
 async function snapshotMarket() {
   const j = await pacifica('/info/prices');
   if (!j.success || !Array.isArray(j.data)) throw new Error('prices unavailable');
+  // previous OI per symbol (latest snapshot) so we can compute rate-of-change
+  const prevOi = {};
+  try {
+    const prev = await sb('GET', 'market_snapshots?select=symbol,oi,ts&order=ts.desc&limit=200');
+    for (const p of prev ?? []) if (prevOi[p.symbol] === undefined) prevOi[p.symbol] = p.oi;
+  } catch (e) { /* first run or column missing — roc stays null */ }
   const now = new Date().toISOString();
   const rows = j.data
     .filter(m => m.symbol && m.mark != null)
     .slice(0, 80)
     .map(m => {
       const y = +m.yesterday_price;
+      const sym = String(m.symbol).replace(/[^A-Za-z0-9_\-]/g, '');
+      const oi = m.open_interest != null ? +m.open_interest : null;
+      const po = prevOi[sym];
+      const roc = (oi && po) ? +(((oi - po) / po) * 100).toFixed(2) : null;
       return {
-        symbol: String(m.symbol).replace(/[^A-Za-z0-9_\-]/g, ''),
+        symbol: sym,
         ts: now,
         mark: +m.mark,
         chg_pct: y > 0 ? +(((+m.mark - y) / y) * 100).toFixed(3) : null,
         funding: m.funding != null ? +(+m.funding * 24 * 365 * 100).toFixed(2) : null,
+        oi, oi_roc: roc,
         rsi: null, adx: null, atr_pct: null, trend: null,
       };
     });
