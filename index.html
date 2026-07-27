@@ -338,13 +338,7 @@ details.cdrop>summary::-webkit-details-marker{display:none}
  <div class="row" style="justify-content:space-between"><b style="font-size:14px">&#128211; Journal &amp; edge</b><div class="row"><button class="ghost" id="jReport">&#128228; Weekly edge</button><button class="ghost" id="jCsv">CSV</button></div></div>
  <div id="journalBody" class="foot" style="margin-top:8px">No closed trades logged yet.</div>
 </div>
-<div class="card">
-<details class="cdrop" id="sbDrop" ontoggle="S.sb2Open=this.open;try{localStorage.setItem('petpapp_settings',JSON.stringify(S))}catch(e){}">
-<summary><b style="font-size:14px">📊 Signal Scoreboard</b> <span class="sub">· automatic record of STRONG signals · tap to open ▾</span></summary>
- <div id="sbBox" style="margin-top:8px" class="foot"></div>
- <button class="ghost" id="wkBtn" style="margin-top:8px">📤 Weekly review</button>
-</details>
-</div>
+
 <div class="card">
  <b style="font-size:14px">🔔 Price alerts</b>
  <div id="alBox" style="margin-top:8px"></div>
@@ -502,7 +496,7 @@ This app is educational and informational only — not financial advice. It neve
 
 <script>
 /* ============ CONFIG ============ */
-var APP_VER='20260730b';(function(){try{if('serviceWorker' in navigator){navigator.serviceWorker.getRegistrations().then(function(rs){rs.forEach(function(r){try{r.update()}catch(e){}})}).catch(function(){});}var seen=null;try{seen=localStorage.getItem('petp_ver')}catch(e){}if(seen!==APP_VER){try{localStorage.setItem('petp_ver',APP_VER)}catch(e){}if(window.caches&&caches.keys){caches.keys().then(function(ks){ks.forEach(function(k){try{caches.delete(k)}catch(e){}})}).catch(function(){});}if('serviceWorker' in navigator){navigator.serviceWorker.getRegistrations().then(function(rs){var had=rs.length;rs.forEach(function(r){try{r.unregister()}catch(e){}});if(had){setTimeout(function(){try{location.reload()}catch(e){}},400);}}).catch(function(){});}}}catch(e){}})();
+var APP_VER='20260730c';(function(){try{if('serviceWorker' in navigator){navigator.serviceWorker.getRegistrations().then(function(rs){rs.forEach(function(r){try{r.update()}catch(e){}})}).catch(function(){});}var seen=null;try{seen=localStorage.getItem('petp_ver')}catch(e){}if(seen!==APP_VER){try{localStorage.setItem('petp_ver',APP_VER)}catch(e){}if(window.caches&&caches.keys){caches.keys().then(function(ks){ks.forEach(function(k){try{caches.delete(k)}catch(e){}})}).catch(function(){});}if('serviceWorker' in navigator){navigator.serviceWorker.getRegistrations().then(function(rs){var had=rs.length;rs.forEach(function(r){try{r.unregister()}catch(e){}});if(had){setTimeout(function(){try{location.reload()}catch(e){}},400);}}).catch(function(){});}}}catch(e){}})();
 let API='https://api.pacifica.fi/api/v1';
 function setNet(n){S.net=(n==='test')?'test':'main';API=S.net==='test'?'https://test-api.pacifica.fi/api/v1':'https://api.pacifica.fi/api/v1';AGENT=null;ARMED=false;}
 const MODES={
@@ -2387,6 +2381,16 @@ function renderApex(){
   +(pendList.length?'<div style="margin-top:6px"><b style="font-size:12px">\u23F3 In progress ('+pendList.length+')</b> <span class="sub">— waiting to fill or running; the robot checks them every 20 min</span>'
     +pendList.slice(0,10).map(p=>'<div class="sub" style="margin-top:2px"><b>'+p.sym+'</b> '+(p.dir==='long'?'\u25B2':'\u25BC')+' '+p.setup+' ('+p.tf+') · started '+apexAgo(p.ts)+' · entry '+fmt(p.entry)+' \u2192 \uD83C\uDFAF '+fmt(p.target)+' / \uD83D\uDED1 '+fmt(p.stop)+'</div>').join('')
     +(pendList.length>10?'<div class="sub">…and '+(pendList.length-10)+' more</div>':'')+'</div>':'')
+  +(function(){
+    var by={};for(var i=0;i<resolved.length;i++){var x=resolved[i];var k=x.setup||'?';(by[k]=by[k]||{w:0,l:0})[x.result==='w'?'w':'l']++}
+    var ks=Object.keys(by).map(function(k){var a=by[k],n=a.w+a.l;return{k:k,w:a.w,l:a.l,n:n,wr:n?a.w/n:0}})
+      .filter(function(o){return o.n>=3}).sort(function(a,b){return b.wr-a.wr});
+    if(!ks.length)return '';
+    return '<div style="margin-top:8px"><b style="font-size:12px">Which setups actually win</b> <span class="sub">— from all '+resolved.length+' resolved setups</span>'
+     +ks.map(function(o){var pct=Math.round(o.wr*100),col=o.wr>=0.55?'var(--green)':o.wr>=0.45?'var(--amber)':'var(--red)';
+       return '<div class="sub" style="margin-top:2px"><b>'+o.k+'</b> <b style="color:'+col+'">'+o.w+'W–'+o.l+'L</b> ('+pct+'%) · '+o.n+' resolved</div>'}).join('')
+     +'<div class="sub" style="margin-top:2px">Favor the green ones. Be suspicious of the red ones.</div></div>'})()
+  +'<div style="margin-top:8px"><button class="ghost" onclick="event.preventDefault();try{weeklyDigest()}catch(e){}">📤 Weekly review</button></div>'
   +'</details>';
  if(!results.length){
   h+='<div class="foot" style="margin-top:8px"><b>How APEX works:</b><br>1️⃣ Tap <b>Scan</b> — it checks the whole market<br>2️⃣ Read the verdict box up top (the AI writes it after each scan)<br>3️⃣ Pick from <b>Best trades</b> — each shows its real historical odds<br>4️⃣ Tap one → 📊 Details → ⚡ Open on Pacifica → confirm the ticket<br>5️⃣ Every result is remembered forever — the robot keeps learning even while you sleep</div>';
@@ -2840,14 +2844,14 @@ function init(){
  renderFavs();renderTrades();renderHist();
  fetchNews();setInterval(fetchNews,1200000);
  renderSB();renderAlerts();econCheck();dayCheck();
- document.getElementById('wkBtn').onclick=weeklyDigest;
+ (function(){var _wk=document.getElementById('wkBtn');if(_wk)_wk.onclick=weeklyDigest})();
  document.getElementById('feePct').onchange=()=>{saveSettings();results.forEach(r=>{r.rrNet=netRR(r.entry,r.stop,r.target)});render()};
  document.getElementById('dayLoss').onchange=()=>{saveSettings();dayCheck()};
  document.getElementById('ckList').onchange=saveSettings;
  if(restore()){results.forEach(computeSize);prevStrong=strongKeys();render()}
  document.getElementById('jReport').onclick=journalReport;document.getElementById('jCsv').onclick=exportJournal;
  document.getElementById('liveRefresh').onclick=renderLiveAccount;document.getElementById('wallet').onchange=()=>{saveSettings();renderLiveAccount();syncAcctNow();};var _as=document.getElementById('acctSync');if(_as)_as.onclick=syncAcctNow;document.getElementById('maxHeat').onchange=()=>{saveSettings();renderRisk()};
- setNet(S.net||'main');(function(){var seg=document.getElementById('netSeg');if(seg){var bs=seg.querySelectorAll('button');for(var i=0;i<bs.length;i++){(function(b){b.classList.toggle('on',b.dataset.n===(S.net||'main'));b.onclick=function(){setNet(b.dataset.n);saveSettings();var xs=seg.querySelectorAll('button');for(var k=0;k<xs.length;k++)xs[k].classList.toggle('on',xs[k].dataset.n===S.net);var nl=document.getElementById('netLabel');if(nl)nl.textContent=(S.net==='test')?'test-api.pacifica.fi':'';renderTradeStatus();runScan();setTimeout(renderLiveAccount,300);};})(bs[i]);}var nl0=document.getElementById('netLabel');if(nl0)nl0.textContent=(S.net==='test')?'test-api.pacifica.fi':'';}})();renderVerdict();renderRisk();renderJournal();renderLiveAccount();renderTradeStatus();try{renderApex()}catch(e){}try{var _vv=document.getElementById('apexVer');if(_vv)_vv.textContent='v'+APP_VER}catch(e){}try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist()}catch(e){}try{if(S.sigOpen)document.getElementById('sigDrop').open=true;if(S.sb2Open)document.getElementById('sbDrop').open=true;if(S.cycOpen===false)document.getElementById('cycDrop').open=false;renderCycle()}catch(e){}try{applyAiVerdict();setTimeout(function(){apexAutoRead()},2500)}catch(e){}try{apexdbHydrate()}catch(e){}document.getElementById('saveAgent').onclick=async()=>{try{await saveAgentKey(document.getElementById('agentKey').value,document.getElementById('agentPass').value);document.getElementById('agentKey').value='';document.getElementById('agentPass').value='';setStatus('agent key saved & armed','var(--green)')}catch(e){alert(e.message)}};var _nt=document.getElementById('newsToggle');if(_nt){_nt.checked=(S.news!==false);_nt.onchange=function(){S.news=_nt.checked;saveSettings();fetchNews();};}
+ setNet(S.net||'main');(function(){var seg=document.getElementById('netSeg');if(seg){var bs=seg.querySelectorAll('button');for(var i=0;i<bs.length;i++){(function(b){b.classList.toggle('on',b.dataset.n===(S.net||'main'));b.onclick=function(){setNet(b.dataset.n);saveSettings();var xs=seg.querySelectorAll('button');for(var k=0;k<xs.length;k++)xs[k].classList.toggle('on',xs[k].dataset.n===S.net);var nl=document.getElementById('netLabel');if(nl)nl.textContent=(S.net==='test')?'test-api.pacifica.fi':'';renderTradeStatus();runScan();setTimeout(renderLiveAccount,300);};})(bs[i]);}var nl0=document.getElementById('netLabel');if(nl0)nl0.textContent=(S.net==='test')?'test-api.pacifica.fi':'';}})();renderVerdict();renderRisk();renderJournal();renderLiveAccount();renderTradeStatus();try{renderApex()}catch(e){}try{var _vv=document.getElementById('apexVer');if(_vv)_vv.textContent='v'+APP_VER}catch(e){}try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist()}catch(e){}try{if(S.sigOpen)document.getElementById('sigDrop').open=true;if(S.cycOpen===false)document.getElementById('cycDrop').open=false;renderCycle()}catch(e){}try{applyAiVerdict();setTimeout(function(){apexAutoRead()},2500)}catch(e){}try{apexdbHydrate()}catch(e){}document.getElementById('saveAgent').onclick=async()=>{try{await saveAgentKey(document.getElementById('agentKey').value,document.getElementById('agentPass').value);document.getElementById('agentKey').value='';document.getElementById('agentPass').value='';setStatus('agent key saved & armed','var(--green)')}catch(e){alert(e.message)}};var _nt=document.getElementById('newsToggle');if(_nt){_nt.checked=(S.news!==false);_nt.onchange=function(){S.news=_nt.checked;saveSettings();fetchNews();};}
  (function(){var _dl=document.getElementById('dlLog');if(_dl)_dl.onclick=downloadLogs;var _ap=document.getElementById('agentPass');if(_ap)_ap.oninput=function(){var h=document.getElementById('pwHint');if(h)h.textContent=_ap.value?('strength: '+pwStrength(_ap.value)):'';};var cl=document.getElementById('chLoad');if(cl)cl.onclick=loadChartGrid;var cc=document.getElementById('chCompat');if(cc){cc.checked=!!S.chartsCompat;cc.onchange=function(){S.chartsCompat=cc.checked;saveSettings();var g=document.getElementById('chGrid');if(g&&g.style.display!=='none')loadChartGrid();};}var fc=document.getElementById('fsClose');if(fc)fc.onclick=closeFullChart;var fg=document.getElementById('fsGo');if(fg)fg.onclick=function(){var v=(document.getElementById('fsSym').value||'').trim().toUpperCase();if(v)openFullChart(v);};document.addEventListener('keydown',function(e){if(e.key==='Escape'){var o=document.getElementById('chartFS');if(o&&o.style.display==='flex')closeFullChart();}});})();
  window.addEventListener('popstate',()=>{if(document.getElementById('detail').style.display==='block')hideDetail()});
  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&Date.now()-(window._lastScanTs||0)>120000)runScan()});
