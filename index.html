@@ -482,6 +482,7 @@ This app is educational and informational only — not financial advice. It neve
   <button class="ghost" onclick="closeDetail()">✕ Close</button>
  </div>
  <div class="row" id="dActions" style="margin-top:10px"></div>
+ <div id="dAI" class="foot" style="display:none;margin-top:8px;border-top:1px solid var(--border);padding-top:8px"></div>
  <div class="lvls" id="dLvls"></div>
  <div class="obwrap" id="dOb"></div>
  <div class="obwrap" id="dLS"></div>
@@ -494,7 +495,7 @@ This app is educational and informational only — not financial advice. It neve
 
 <script>
 /* ============ CONFIG ============ */
-var APP_VER='20260729d';(function(){try{if('serviceWorker' in navigator){navigator.serviceWorker.getRegistrations().then(function(rs){rs.forEach(function(r){try{r.update()}catch(e){}})}).catch(function(){});}var seen=null;try{seen=localStorage.getItem('petp_ver')}catch(e){}if(seen!==APP_VER){try{localStorage.setItem('petp_ver',APP_VER)}catch(e){}if(window.caches&&caches.keys){caches.keys().then(function(ks){ks.forEach(function(k){try{caches.delete(k)}catch(e){}})}).catch(function(){});}if('serviceWorker' in navigator){navigator.serviceWorker.getRegistrations().then(function(rs){var had=rs.length;rs.forEach(function(r){try{r.unregister()}catch(e){}});if(had){setTimeout(function(){try{location.reload()}catch(e){}},400);}}).catch(function(){});}}}catch(e){}})();
+var APP_VER='20260729e';(function(){try{if('serviceWorker' in navigator){navigator.serviceWorker.getRegistrations().then(function(rs){rs.forEach(function(r){try{r.update()}catch(e){}})}).catch(function(){});}var seen=null;try{seen=localStorage.getItem('petp_ver')}catch(e){}if(seen!==APP_VER){try{localStorage.setItem('petp_ver',APP_VER)}catch(e){}if(window.caches&&caches.keys){caches.keys().then(function(ks){ks.forEach(function(k){try{caches.delete(k)}catch(e){}})}).catch(function(){});}if('serviceWorker' in navigator){navigator.serviceWorker.getRegistrations().then(function(rs){var had=rs.length;rs.forEach(function(r){try{r.unregister()}catch(e){}});if(had){setTimeout(function(){try{location.reload()}catch(e){}},400);}}).catch(function(){});}}}catch(e){}})();
 let API='https://api.pacifica.fi/api/v1';
 function setNet(n){S.net=(n==='test')?'test':'main';API=S.net==='test'?'https://test-api.pacifica.fi/api/v1':'https://api.pacifica.fi/api/v1';AGENT=null;ARMED=false;}
 const MODES={
@@ -930,7 +931,9 @@ function showDetail(ix){
  document.getElementById('dTitle').textContent=r.sym+' — '+r.setup+' ('+r.dir.toUpperCase()+')';
  document.getElementById('dSub').textContent=horizon(r.tf)+' · '+MODES[S.mode].label+' · '+r.tf+'/'+r.ctf+' (bias '+r.bias+') · ATR '+r.atrPct.toFixed(2)+'% · ADX '+(r.adx!=null?r.adx.toFixed(0):'–')+' · RSI '+(r.rsiV!=null?r.rsiV.toFixed(0):'–')+' · fund/yr '+r.fundAnn.toFixed(1)+'%'+(r.src==='binance'?' · candles: Binance fallback':'');
  const act=document.getElementById('dActions');act.innerHTML='';
+ try{var _dai=document.getElementById('dAI');if(_dai){_dai.style.display='none';_dai.innerHTML='';}}catch(e){}
  const _ob=document.createElement('button');_ob.className='primary';_ob.textContent='⚡ Open on Pacifica';_ob.onclick=()=>openTradeTicket(ix);act.appendChild(_ob);
+ const _ai=document.createElement('button');_ai.className='ghost';_ai.textContent='🤖 Analyze with AI';_ai.onclick=()=>apexCommittee(ix,'dAI');act.appendChild(_ai);
  const tb2=document.createElement('button');tb2.className='ghost';tb2.textContent='➕ Track this trade';tb2.onclick=()=>addTrade(r);act.appendChild(tb2);
  const fb=document.createElement('button');fb.className='ghost';fb.textContent=S.favs.includes(r.sym)?'★ Favorite':'☆ Favorite';
  fb.onclick=()=>{toggleFav(r.sym);fb.textContent=S.favs.includes(r.sym)?'★ Favorite':'☆ Favorite'};act.appendChild(fb);
@@ -2553,12 +2556,15 @@ function apexPackage(r){
   market_regime:APEXREG.label,regime_detail:APEXREG.why,
   planned_size:r.size?+(+r.size).toFixed(4):null,planned_leverage:r.lev?+(+r.lev).toFixed(1):null,
   account_risk_pct:S.riskPct}}
-async function apexCommittee(ix){
+function apexOutTo(tgt,html){
+ const el=document.getElementById(tgt||'apexAiOut');if(!el)return;
+ el.style.display='block';el.innerHTML=html}
+async function apexCommittee(ix,tgt){
  const r=results[ix];if(!r)return;
- apexAiOut('<span class="muted">🤖 committee arguing '+apexEsc(r.sym)+' '+apexEsc(r.setup)+'…</span>');
+ apexOutTo(tgt,'<span class="muted">🤖 committee arguing '+apexEsc(r.sym)+' '+apexEsc(r.setup)+'…</span>');
  try{const t=await apexAI('committee',apexPackage(r));
-  apexAiOut('<b>🤖 AI committee — '+apexEsc(r.sym)+' '+(r.dir==='long'?'LONG ▲':'SHORT ▼')+'</b> <span class="sub">advisory only — the numbers and the veto always win</span><br>'+apexAiFmt(t));
- }catch(e){apexAiOut('<span style="color:var(--amber)">🤖 '+apexEsc(e.message)+'</span>')}}
+  apexOutTo(tgt,'<b>🤖 AI committee — '+apexEsc(r.sym)+' '+(r.dir==='long'?'LONG ▲':'SHORT ▼')+'</b> <span class="sub">advisory only — the numbers and the veto always win</span><br>'+apexAiFmt(t));
+ }catch(e){apexOutTo(tgt,'<span style="color:var(--amber)">🤖 '+apexEsc(e.message)+'</span>')}}
 async function apexDaily(){
  const day=new Date().toISOString().slice(0,10);
  let cache=null;try{cache=JSON.parse(localStorage.getItem('petp_apex_report')||'null')}catch(e){}
