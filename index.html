@@ -450,6 +450,20 @@ This app is educational and informational only — not financial advice. It neve
   <select id="tkMode" onchange="tkModeChange()"><option value="market">Market now (fills immediately)</option><option value="limit">Limit at my entry (waits for price)</option></select>
   <div id="tkEntryRow" style="display:none"><label for="tkEntry">Limit entry price</label><input type="text" id="tkEntry" inputmode="decimal"></div>
   <label for="tkAmount">Amount (base asset units)</label><input type="text" id="tkAmount" inputmode="decimal">
+  <div class="row" style="align-items:center;gap:10px;margin-top:8px">
+   <input type="range" id="tkPctSlider" min="0" max="100" step="1" value="0" style="flex:1;accent-color:var(--accent,#3b82f6)">
+   <div style="display:flex;align-items:center;gap:3px;background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:6px 8px;min-width:44px;justify-content:center">
+    <input type="text" id="tkPctBox" inputmode="numeric" value="0" style="width:26px;background:transparent;border:none;color:var(--text);text-align:right;font:inherit;padding:0">
+    <span class="sub">%</span>
+   </div>
+  </div>
+  <div class="row" style="gap:6px;margin-top:6px">
+   <button type="button" class="ghost" style="flex:1" onclick="tkPctPick(25)">25%</button>
+   <button type="button" class="ghost" style="flex:1" onclick="tkPctPick(50)">50%</button>
+   <button type="button" class="ghost" style="flex:1" onclick="tkPctPick(75)">75%</button>
+   <button type="button" class="ghost" style="flex:1" onclick="tkPctPick(100)">100%</button>
+  </div>
+  <div class="sub" id="tkPctNote" style="margin-top:4px">Size by % of your available balance (optional) — or just type an amount above.</div>
   <label for="tkStop">Stop-loss price</label><input type="text" id="tkStop" inputmode="decimal">
   <label for="tkTarget">Take-profit price</label><input type="text" id="tkTarget" inputmode="decimal">
   <label for="tkSlip">Max slippage %</label><input type="text" id="tkSlip" inputmode="decimal" value="0.5">
@@ -496,7 +510,7 @@ This app is educational and informational only — not financial advice. It neve
 
 <script>
 /* ============ CONFIG ============ */
-var APP_VER='20260730e';(function(){try{if('serviceWorker' in navigator){navigator.serviceWorker.getRegistrations().then(function(rs){rs.forEach(function(r){try{r.update()}catch(e){}})}).catch(function(){});}var seen=null;try{seen=localStorage.getItem('petp_ver')}catch(e){}if(seen!==APP_VER){try{localStorage.setItem('petp_ver',APP_VER)}catch(e){}if(window.caches&&caches.keys){caches.keys().then(function(ks){ks.forEach(function(k){try{caches.delete(k)}catch(e){}})}).catch(function(){});}if('serviceWorker' in navigator){navigator.serviceWorker.getRegistrations().then(function(rs){var had=rs.length;rs.forEach(function(r){try{r.unregister()}catch(e){}});if(had){setTimeout(function(){try{location.reload()}catch(e){}},400);}}).catch(function(){});}}}catch(e){}})();
+var APP_VER='20260730g';(function(){try{if('serviceWorker' in navigator){navigator.serviceWorker.getRegistrations().then(function(rs){rs.forEach(function(r){try{r.update()}catch(e){}})}).catch(function(){});}var seen=null;try{seen=localStorage.getItem('petp_ver')}catch(e){}if(seen!==APP_VER){try{localStorage.setItem('petp_ver',APP_VER)}catch(e){}if(window.caches&&caches.keys){caches.keys().then(function(ks){ks.forEach(function(k){try{caches.delete(k)}catch(e){}})}).catch(function(){});}if('serviceWorker' in navigator){navigator.serviceWorker.getRegistrations().then(function(rs){var had=rs.length;rs.forEach(function(r){try{r.unregister()}catch(e){}});if(had){setTimeout(function(){try{location.reload()}catch(e){}},400);}}).catch(function(){});}}}catch(e){}})();
 let API='https://api.pacifica.fi/api/v1';
 function setNet(n){S.net=(n==='test')?'test':'main';API=S.net==='test'?'https://test-api.pacifica.fi/api/v1':'https://api.pacifica.fi/api/v1';AGENT=null;ARMED=false;}
 const MODES={
@@ -1882,7 +1896,12 @@ function openTradeTicket(ix){
  document.getElementById('tkTarget').value=plainNum(r.target);
  document.getElementById('tkEntry').value=plainNum(r.entry);document.getElementById('tkMode').value='market';tkModeChange();
  var _mi=(MINFO[r.sym]||{});document.getElementById('tkLev').value=Math.max(1,Math.min(_mi.maxLev||50,Math.round(r.lev||3)));
- document.getElementById('tkLev').oninput=function(){tkTicketMeta(r);};document.getElementById('tkAmount').oninput=function(){tkTicketMeta(r);};tkTicketMeta(r);
+ document.getElementById('tkLev').oninput=function(){var sl=document.getElementById('tkPctSlider');if(sl&&+sl.value>0)tkPctApply(sl.value);else tkTicketMeta(r);};
+ document.getElementById('tkAmount').oninput=function(){var sl=document.getElementById('tkPctSlider'),bx=document.getElementById('tkPctBox');if(sl)sl.value=0;if(bx)bx.value=0;var nt=document.getElementById('tkPctNote');if(nt)nt.textContent='Size by % of your available balance (optional) — or just type an amount above.';tkTicketMeta(r);};
+ tkTicketMeta(r);
+ var _pSl=document.getElementById('tkPctSlider'),_pBx=document.getElementById('tkPctBox');
+ if(_pSl){_pSl.value=0;_pSl.oninput=function(){tkPctApply(this.value)};}
+ if(_pBx){_pBx.value=0;_pBx.oninput=function(){tkPctApply(this.value)};}
  document.getElementById('tkArmNote').innerHTML=ARMED?'<span style="color:var(--green)">🔓 armed</span>':'🔒 you will be asked for your passphrase on confirm';
  document.getElementById('tkModal').style.display='flex';document.body.style.overflow='hidden';
 }
@@ -2124,12 +2143,42 @@ function tkTicketMeta(r){
  var px=(MK[r.sym]&&MK[r.sym].p)||r.entry||0;
  var notional=amt*px, margin=lev>0?notional/lev:notional;
  var liq=r.dir==='long'?px*(1-1/lev+0.005):px*(1+1/lev-0.005);
- var parts=['Size ≈ $'+fmt(notional),'margin ≈ $'+fmt(margin)+' @'+lev+'x','est. liq '+fmt(liq)];
+ var basis=tkAvailBasis();
+ var parts=[];
+ parts.push(basis.v>0?('avail $'+fmt(basis.v)+(basis.src==='manual'?' (manual)':'')):'avail — link wallet');
+ parts.push('Size ≈ $'+fmt(notional),'margin ≈ $'+fmt(margin)+' @'+lev+'x','est. liq '+fmt(liq));
+ if(basis.v>0&&margin>basis.v)parts.push('⚠ over available');
  if(mi.tick)parts.push('tick '+mi.tick);
  if(mi.lot)parts.push('lot '+mi.lot);
  if(mi.minUsd)parts.push('min $'+mi.minUsd);
  el.textContent=parts.join(' · ');
 }
+/* ===== % of balance slider (25/50/75/100) — sizes the Amount field for you ===== */
+function tkAvailBasis(){
+ if(typeof LIVEACCT!=='undefined'&&LIVEACCT&&LIVEACCT.available!=null&&LIVEACCT.available>0)return{v:+LIVEACCT.available,src:'live'};
+ var a=+((document.getElementById('acct')||{}).value)||+(S.acct||0);
+ return a>0?{v:a,src:'manual'}:{v:0,src:'none'};
+}
+function tkPctApply(pct){
+ var r=_ticket;if(!r)return;
+ pct=Math.max(0,Math.min(100,Math.round(+pct||0)));
+ var sl=document.getElementById('tkPctSlider'),bx=document.getElementById('tkPctBox'),note=document.getElementById('tkPctNote');
+ if(sl)sl.value=pct;if(bx)bx.value=pct;
+ if(pct<=0){if(note)note.textContent='Size by % of your available balance (optional) — or just type an amount above.';return}
+ var basis=tkAvailBasis();
+ var lev=Math.max(1,+((document.getElementById('tkLev')||{}).value)||1);
+ var px=(MK[r.sym]&&MK[r.sym].p)||r.entry||0;
+ if(!(basis.v>0)){if(note)note.textContent='Link your Pacifica wallet (or set Account $ in Settings) to size by % of balance.';return}
+ if(!(px>0)){if(note)note.textContent='Waiting on live price…';return}
+ var buyingPower=basis.v*(pct/100)*lev;
+ var amt=buyingPower/px;
+ var mi=MINFO[r.sym]||{};
+ var rounded=roundDownLot(amt,mi.lot);if(rounded>0)amt=rounded;
+ document.getElementById('tkAmount').value=plainNum(amt,8);
+ tkTicketMeta(r);
+ if(note)note.textContent=pct+'% of '+(basis.src==='live'?'available balance':'your Account $')+' ($'+fmt(basis.v)+') at '+lev+'x ≈ $'+fmt(buyingPower)+' position size';
+}
+function tkPctPick(p){tkPctApply(p)}
 
 /* ===== scoreboard setup-learning + doobie FX ===== */
 function setupLearnHtml(){
