@@ -496,7 +496,7 @@ This app is educational and informational only — not financial advice. It neve
 
 <script>
 /* ============ CONFIG ============ */
-var APP_VER='20260730d';(function(){try{if('serviceWorker' in navigator){navigator.serviceWorker.getRegistrations().then(function(rs){rs.forEach(function(r){try{r.update()}catch(e){}})}).catch(function(){});}var seen=null;try{seen=localStorage.getItem('petp_ver')}catch(e){}if(seen!==APP_VER){try{localStorage.setItem('petp_ver',APP_VER)}catch(e){}if(window.caches&&caches.keys){caches.keys().then(function(ks){ks.forEach(function(k){try{caches.delete(k)}catch(e){}})}).catch(function(){});}if('serviceWorker' in navigator){navigator.serviceWorker.getRegistrations().then(function(rs){var had=rs.length;rs.forEach(function(r){try{r.unregister()}catch(e){}});if(had){setTimeout(function(){try{location.reload()}catch(e){}},400);}}).catch(function(){});}}}catch(e){}})();
+var APP_VER='20260730e';(function(){try{if('serviceWorker' in navigator){navigator.serviceWorker.getRegistrations().then(function(rs){rs.forEach(function(r){try{r.update()}catch(e){}})}).catch(function(){});}var seen=null;try{seen=localStorage.getItem('petp_ver')}catch(e){}if(seen!==APP_VER){try{localStorage.setItem('petp_ver',APP_VER)}catch(e){}if(window.caches&&caches.keys){caches.keys().then(function(ks){ks.forEach(function(k){try{caches.delete(k)}catch(e){}})}).catch(function(){});}if('serviceWorker' in navigator){navigator.serviceWorker.getRegistrations().then(function(rs){var had=rs.length;rs.forEach(function(r){try{r.unregister()}catch(e){}});if(had){setTimeout(function(){try{location.reload()}catch(e){}},400);}}).catch(function(){});}}}catch(e){}})();
 let API='https://api.pacifica.fi/api/v1';
 function setNet(n){S.net=(n==='test')?'test':'main';API=S.net==='test'?'https://test-api.pacifica.fi/api/v1':'https://api.pacifica.fi/api/v1';AGENT=null;ARMED=false;}
 const MODES={
@@ -2531,21 +2531,35 @@ async function apexAI(kind,data){
  const key=((S.gemKey||((document.getElementById('gemKey')||{}).value||''))+'').trim();
  if(key){
   const models=['gemini-flash-latest','gemini-3-flash','gemini-2.5-flash'];
+  const BUDGET=8192;
+  const call1=async(m,prompt)=>fetch('https://generativelanguage.googleapis.com/v1beta/models/'+m+':generateContent?key='+encodeURIComponent(key),{
+    method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({contents:[{parts:[{text:prompt}]}],generationConfig:{temperature:0.4,maxOutputTokens:BUDGET,thinkingConfig:{thinkingBudget:0}}})});
   let lastErr='';
   for(const m of models){
-   const r=await fetch('https://generativelanguage.googleapis.com/v1beta/models/'+m+':generateContent?key='+encodeURIComponent(key),{
-    method:'POST',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({contents:[{parts:[{text:apexPromptFor(kind,data)}]}],generationConfig:{temperature:0.4,maxOutputTokens:4096,thinkingConfig:{thinkingBudget:0}}})});
+   let r=await call1(m,apexPromptFor(kind,data));
    if(r.status===404){lastErr='model '+m+' unavailable';continue}
    let j={};try{j=await r.json()}catch(e){}
    if(r.status===400&&JSON.stringify(j).indexOf('API key')>=0)throw new Error('Gemini says the API key is invalid — re-copy it from aistudio.google.com/app/apikey into Settings.');
    if(r.status===429)throw new Error('Gemini free-tier limit hit for now — try again in a minute (daily reads are cached to protect quota).');
-   if(!r.ok){lastErr=(j.error&&j.error.message)||('AI error '+r.status);break}
-   const cand=j.candidates&&j.candidates[0];
-   const t=((cand&&cand.content&&cand.content.parts)||[]).map(p=>p.text||'').join('');
-   if(t&&cand.finishReason==='MAX_TOKENS'&&t.length<40){lastErr='reply cut off — try again';continue}
-   if(t)return cand.finishReason==='MAX_TOKENS'?(t+'\n\n(cut off — reply ran long; tap again for the rest)'):t;
-   lastErr='empty reply';break}
+   if(!r.ok){lastErr=(j.error&&j.error.message)||('AI error '+r.status);continue}
+   let cand=j.candidates&&j.candidates[0];
+   let t=((cand&&cand.content&&cand.content.parts)||[]).map(p=>p.text||'').join('');
+   // reply hit the token ceiling mid-sentence — ask the SAME model to finish it, up to twice,
+   // instead of just showing a partial answer.
+   let tries=0;
+   while(cand&&cand.finishReason==='MAX_TOKENS'&&tries<2){
+    tries++;
+    const contPrompt=apexPromptFor(kind,data)+'\n\nYou already began answering but were cut off before finishing. Here is exactly what you wrote so far:\n"""'+t+'"""\nContinue writing from precisely where that left off — do not repeat any of it and do not restart — and finish the reply, keeping to the format and word limit already given.';
+    const r2=await call1(m,contPrompt);
+    if(!r2.ok)break;
+    let j2={};try{j2=await r2.json()}catch(e){}
+    cand=j2.candidates&&j2.candidates[0];
+    const more=((cand&&cand.content&&cand.content.parts)||[]).map(p=>p.text||'').join('');
+    if(!more)break;
+    t+=more}
+   if(t)return t;
+   lastErr='empty reply'}
   throw new Error(lastErr||'AI unavailable')}
  // fallback: server proxy if it exists
  const r=await fetch(SB_URL+'/functions/v1/apex-ai',{method:'POST',
