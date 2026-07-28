@@ -4,30 +4,47 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://*.tradingview.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://api.pacifica.fi https://test-api.pacifica.fi https://api.binance.com https://api.frankfurter.dev https://api.frankfurter.app https://api.allorigins.win https://*.tradingview.com https://ssytilyswhaeorhaaqjr.supabase.co https://generativelanguage.googleapis.com; frame-src 'self' https://*.tradingview.com blob: data:; base-uri 'self'; form-action 'none'">
-<meta name="theme-color" content="#0b0f14">
+<meta name="theme-color" content="#131820">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-192.png">
 <title>APEX Trading OS</title>
 <style>
+/* ============================================================================
+   CALM PALETTE
+   Trading apps default to alarm colours — pure #ef4444 red, neon #22c55e green,
+   near-black backgrounds under near-white text. That combination reads as
+   emergency: maximum saturation on the two colours the eye is most sensitive
+   to, at maximum contrast. It keeps the nervous system in a state of alert
+   before a single number has loaded.
+   Every hue below is desaturated toward its natural-pigment equivalent —
+   sage rather than neon, clay rather than alarm, sand rather than warning. Red
+   is deliberately the *least* saturated colour here, because a loss should
+   inform, not startle. Contrast is held just above WCAG AA rather than pushed
+   to maximum, and the background carries a trace of warmth so it reads as a
+   dim room rather than a void.
+   ============================================================================ */
 :root{color-scheme:dark;
- --bg:#0b0f14;--card:#131a23;--card2:#0f151d;--border:#1f2937;--text:#e5eaf2;--muted:#8494ab;
- --green:#22c55e;--green-bg:#0c2a1a;--red:#ef4444;--red-bg:#2a0f0f;--amber:#f59e0b;--amber-bg:#291d05;
- --blue:#3b82f6;--blue-bg:#0e1d38}
+ --bg:#131820;--card:#1a212b;--card2:#161d26;--border:#252f3b;--text:#d5dce5;--muted:#8b97a6;
+ --green:#7fae8b;--green-bg:#18291f;--red:#c19490;--red-bg:#2b1c1c;--amber:#d3a266;--amber-bg:#2a2118;
+ --blue:#7ba0c4;--blue-bg:#1a2634;
+ --radius:14px;--radius-sm:10px;
+ --shadow:0 1px 2px rgba(0,0,0,.24),0 6px 18px -8px rgba(0,0,0,.42);
+ --ease:cubic-bezier(.4,0,.2,1)}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 button,select,input{touch-action:manipulation}
-body{margin:0;background:var(--bg);color:var(--text);font:14px/1.45 -apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;padding-bottom:70px}
+body{margin:0;background:var(--bg);color:var(--text);font:16px/1.45 -apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;padding-bottom:70px}
 #newsbar{position:fixed;left:0;right:0;bottom:0;z-index:30;background:rgba(11,15,20,.97);border-top:1px solid var(--border);overflow:hidden;padding-bottom:env(safe-area-inset-bottom)}
 #newstrack{display:inline-flex;white-space:nowrap;align-items:center;height:36px;animation:tick 70s linear infinite;will-change:transform}
 #newsbar:active #newstrack,#newsbar:hover #newstrack{animation-play-state:paused}
 @keyframes tick{from{transform:translateX(0)}to{transform:translateX(-50%)}}
-#newstrack a{color:var(--text);text-decoration:none;font-size:12px;margin:0 16px}
+#newstrack a{color:var(--text);text-decoration:none;font-size:13.7px;margin:0 16px}
 #newstrack a b{color:#9cc0ff;font-weight:700;margin-right:6px}
 #newstrack .dot2{color:var(--muted)}
 #newstrack.wait{animation:none}
 header{position:sticky;top:0;z-index:20;background:rgba(11,15,20,.94);backdrop-filter:blur(8px);border-bottom:1px solid var(--border);padding:10px 14px calc(env(safe-area-inset-top)*0 + 10px)}
-h1{font-size:17px;margin:0;display:flex;align-items:center;gap:8px}
+h1{font-size:19.4px;margin:0;display:flex;align-items:center;gap:8px}
 .smoke{opacity:0;animation:smk 3.6s ease-out infinite}
 .s0{animation-duration:5s}
 .s2{animation-delay:1.2s}.s3{animation-delay:2.4s}
@@ -38,72 +55,79 @@ h1{font-size:17px;margin:0;display:flex;align-items:center;gap:8px}
 @keyframes smkp{0%{opacity:0;transform:translateY(4px)}30%{opacity:.8}100%{opacity:0;transform:translateY(-14px)}}
 @keyframes embp{0%,100%{opacity:.7}50%{opacity:1}}
 h1 .dot{width:9px;height:9px;border-radius:50%;background:var(--green);display:inline-block}
-.sub{color:var(--muted);font-size:11px;margin-top:2px}
+.sub{color:var(--muted);font-size:12.5px;margin-top:2px}
 .card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px;margin:10px 12px}
 .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .seg{display:inline-flex;border:1px solid var(--border);border-radius:9px;overflow:hidden}
-.seg button{border:0;background:var(--card2);padding:8px 12px;font:inherit;font-size:13px;color:var(--muted);border-right:1px solid var(--border)}
+.seg button{border:0;background:var(--card2);padding:8px 12px;font:inherit;font-size:14.8px;color:var(--muted);border-right:1px solid var(--border)}
 .seg button:last-child{border-right:0}
 .seg button.on{background:var(--blue-bg);color:#9cc0ff;font-weight:700}
 button.primary{background:var(--blue);color:#fff;border:0;border-radius:9px;padding:9px 16px;font:inherit;font-weight:700}
-button.ghost{background:var(--card2);color:var(--text);border:1px solid var(--border);border-radius:9px;padding:8px 12px;font:inherit;font-size:13px}
+button.ghost{background:var(--card2);color:var(--text);border:1px solid var(--border);border-radius:9px;padding:8px 12px;font:inherit;font-size:14.8px}
 button.ghost.on{background:var(--green-bg);color:var(--green);border-color:var(--green)}
-input[type=number],select{background:var(--card2);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:7px;font:inherit;font-size:13px}
+input[type=number],select{background:var(--card2);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:7px;font:inherit;font-size:14.8px}
 input[type=number]{width:84px}
-label.inl{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:5px}
+label.inl{font-size:13.7px;color:var(--muted);display:flex;align-items:center;gap:5px}
+/* Compact scan stats living in the header gap between the profile selector and
+   the Scan button. Same five numbers the old full-width card carried, at a
+   fraction of the height. Wraps to its own line on narrow phones. */
+#hdrStats{margin-left:auto;display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+#hdrStats span{display:flex;flex-direction:column;align-items:center;line-height:1.1;font-size:10.3px;color:var(--muted);letter-spacing:.2px}
+#hdrStats b{font-size:14.8px;font-weight:800;color:var(--text)}
+@media(max-width:520px){#hdrStats{margin-left:0;width:100%;justify-content:space-between;gap:6px;margin-top:6px}}
 .chips{display:flex;gap:8px;overflow-x:auto;padding:2px 0;margin-top:8px}
 .chip{background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:7px 12px;min-width:96px;flex:0 0 auto}
-.chip b{display:block;font-size:16px}.chip span{font-size:10px;color:var(--muted)}
+.chip b{display:block;font-size:18.2px}.chip span{font-size:11.4px;color:var(--muted)}
 .chip.flash{animation:fl 1s ease 3}@keyframes fl{50%{background:var(--green-bg)}}
 .movers{display:flex;gap:6px;overflow-x:auto;padding:2px 0}
-.mv{flex:0 0 auto;background:var(--card2);border:1px solid var(--border);border-radius:9px;padding:6px 10px;font-size:12px}
+.mv{flex:0 0 auto;background:var(--card2);border:1px solid var(--border);border-radius:9px;padding:6px 10px;font-size:13.7px}
 .mv b{display:block}.up{color:var(--green)}.dn{color:var(--red)}
 .prog{height:5px;background:var(--card2);border-radius:3px;overflow:hidden;margin-top:8px;display:none}
 .prog i{display:block;height:100%;background:var(--blue);width:0%;transition:width .25s}
-table{width:100%;border-collapse:collapse;font-size:12.5px}
-th.sa::after{content:' ▲';font-size:9px}th.sd::after{content:' ▼';font-size:9px}
+table{width:100%;border-collapse:collapse;font-size:14.2px}
+th.sa::after{content:' ▲';font-size:10.3px}th.sd::after{content:' ▼';font-size:10.3px}
 th{color:var(--muted);font-weight:600;text-align:left;padding:7px 6px;border-bottom:2px solid var(--border);white-space:nowrap;cursor:pointer;user-select:none;position:sticky;top:0;background:var(--card)}
 td{padding:8px 6px;border-bottom:1px solid var(--border);white-space:nowrap}
 tr.sig{cursor:pointer}
-.pill{padding:2px 8px;border-radius:20px;font-size:10.5px;font-weight:700;display:inline-block}
+.pill{padding:2px 8px;border-radius:20px;font-size:12px;font-weight:700;display:inline-block}
 .long{background:var(--green-bg);color:var(--green)}.short{background:var(--red-bg);color:var(--red)}
 .strong{background:var(--green);color:#04220f}.watch{background:var(--amber-bg);color:var(--amber)}
 .scorebar{display:inline-block;width:44px;height:7px;background:var(--card2);border-radius:4px;vertical-align:middle;margin-right:5px;overflow:hidden}
 .scorebar i{display:block;height:100%;border-radius:4px}
 .muted{color:var(--muted)}.mono{font-variant-numeric:tabular-nums}
-.flag{font-size:10px;margin-left:2px}
+.flag{font-size:11.4px;margin-left:2px}
 #detail{position:fixed;inset:0;z-index:50;background:var(--bg);overflow-y:auto;display:none;padding:12px;padding-top:calc(10px + env(safe-area-inset-top));padding-bottom:90px}
 #detail .lvls{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
 .lvl{border:1px solid var(--border);background:var(--card);border-radius:10px;padding:8px 12px;flex:1 1 28%}
-.lvl b{display:block;font-size:14px}.lvl span{font-size:10px;color:var(--muted)}
-.checks{font-size:12px;margin-top:8px}
+.lvl b{display:block;font-size:16px}.lvl span{font-size:11.4px;color:var(--muted)}
+.checks{font-size:13.7px;margin-top:8px}
 .checks div{padding:2px 0}.checks .ok{color:var(--green)}.checks .no{color:var(--muted)}
-.checks h4{margin:8px 0 2px;font-size:12px;color:var(--text)}
-.obwrap{margin-top:10px;font-size:12px;color:var(--muted)}
+.checks h4{margin:8px 0 2px;font-size:13.7px;color:var(--text)}
+.obwrap{margin-top:10px;font-size:13.7px;color:var(--muted)}
 .obbar{height:12px;border-radius:6px;overflow:hidden;display:flex;margin-top:4px}
 .obbar i{display:block;height:100%}
 #tvwrap{height:62vh;min-height:360px;margin-top:12px;border:1px solid var(--border);border-radius:12px;overflow:hidden;background:var(--card2)}
-details{margin:10px 12px}summary{cursor:pointer;color:var(--muted);font-size:12px;padding:4px 0}
-.foot{font-size:10.5px;color:var(--muted);margin-top:8px;line-height:1.5}
-.err{color:var(--red);font-size:12px;margin-top:8px;display:none}
+details{margin:10px 12px}summary{cursor:pointer;color:var(--muted);font-size:13.7px;padding:4px 0}
+.foot{font-size:12px;color:var(--muted);margin-top:8px;line-height:1.5}
+.err{color:var(--red);font-size:13.7px;margin-top:8px;display:none}
 .tblwrap{overflow-x:auto;max-height:60vh;overflow-y:auto;border-radius:8px}
 #lock{position:fixed;inset:0;z-index:100;background:var(--bg);display:none;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:20px}
 #lock img{width:76px;height:76px;border-radius:20px;margin-bottom:12px}
-#lockTitle{font-size:17px}
+#lockTitle{font-size:19.4px}
 .pindots{display:flex;gap:14px;margin:18px 0}
 .pindots i{width:14px;height:14px;border-radius:50%;border:2px solid var(--muted);display:block}
 .pindots i.f{background:var(--green);border-color:var(--green)}
 .pinpad{display:grid;grid-template-columns:repeat(3,72px);gap:12px;justify-content:center}
-.pinpad button{width:72px;height:72px;border-radius:50%;background:var(--card);border:1px solid var(--border);color:var(--text);font-size:22px;font-weight:600}
+.pinpad button{width:72px;height:72px;border-radius:50%;background:var(--card);border:1px solid var(--border);color:var(--text);font-size:25.1px;font-weight:600}
 .pinpad button:active{background:var(--blue-bg)}
 #lock.err .pindots i{border-color:var(--red)}
 .sentbar{height:8px;background:linear-gradient(90deg,var(--red),#556 50%,var(--green));border-radius:4px;position:relative;margin-top:4px;max-width:260px}
 .sentbar i{position:absolute;top:-3px;width:4px;height:14px;background:#fff;border-radius:2px;left:50%}
 .heat{display:grid;grid-template-columns:repeat(auto-fill,minmax(62px,1fr));gap:5px;margin-top:10px}
-.tile{border-radius:7px;padding:5px 3px;text-align:center;font-size:10px;color:#eaf6ff}
-.tile b{display:block;font-size:10.5px}
+.tile{border-radius:7px;padding:5px 3px;text-align:center;font-size:11.4px;color:#eaf6ff}
+.tile b{display:block;font-size:12px}
 .tile{cursor:pointer}
-.trow{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border);padding:7px 0;font-size:12.5px;gap:6px;flex-wrap:wrap}
+.trow{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border);padding:7px 0;font-size:14.2px;gap:6px;flex-wrap:wrap}
 .pnl-p{color:var(--green);font-weight:700}.pnl-n{color:var(--red);font-weight:700}
 #q{width:74px}
 /* ==== vNext additions ==== */
@@ -111,16 +135,16 @@ details{margin:10px 12px}summary{cursor:pointer;color:var(--muted);font-size:12p
 .verdict.go{background:linear-gradient(180deg,#0c2a1a,#0f151d);border-color:var(--green)}
 .verdict.caution{background:linear-gradient(180deg,#291d05,#0f151d);border-color:var(--amber)}
 .verdict.stand{background:linear-gradient(180deg,#2a0f0f,#0f151d);border-color:var(--red)}
-.verdict h2{margin:0;font-size:21px;letter-spacing:.4px;display:flex;align-items:center;gap:9px}
-.verdict .vscore{margin-left:auto;font-size:11px;color:var(--muted);font-weight:400;letter-spacing:0}
-.verdict ul{margin:8px 0 0;padding:0;list-style:none;font-size:12.5px;line-height:1.7}
+.verdict h2{margin:0;font-size:23.9px;letter-spacing:.4px;display:flex;align-items:center;gap:9px}
+.verdict .vscore{margin-left:auto;font-size:12.5px;color:var(--muted);font-weight:400;letter-spacing:0}
+.verdict ul{margin:8px 0 0;padding:0;list-style:none;font-size:14.2px;line-height:1.7}
 .verdict li{padding:1px 0}
-.gradepill{display:inline-block;min-width:22px;text-align:center;padding:1px 6px;border-radius:6px;font-weight:800;font-size:11px}
+.gradepill{display:inline-block;min-width:22px;text-align:center;padding:1px 6px;border-radius:6px;font-weight:800;font-size:12.5px}
 .gA{background:var(--green);color:#04220f}.gB{background:var(--blue-bg);color:#9cc0ff}.gC{background:var(--amber-bg);color:var(--amber)}.gD{background:var(--card2);color:var(--muted)}
 .rgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px;margin-top:8px}
 .rbox{background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:8px 10px}
-.rbox b{display:block;font-size:16px}.rbox span{font-size:10px;color:var(--muted)}
-.warnrow{color:var(--amber);font-size:12px;margin-top:8px;line-height:1.5}
+.rbox b{display:block;font-size:18.2px}.rbox span{font-size:11.4px;color:var(--muted)}
+.warnrow{color:var(--amber);font-size:13.7px;margin-top:8px;line-height:1.5}
 .warnrow.bad{color:var(--red)}
 .eqwrap{margin-top:10px}
 .rbar{display:flex;gap:3px;align-items:flex-end;height:44px;margin-top:6px}
@@ -128,11 +152,11 @@ details{margin:10px 12px}summary{cursor:pointer;color:var(--muted);font-size:12p
 #modal{position:fixed;inset:0;z-index:60;background:rgba(0,0,0,.6);display:none;align-items:flex-end;justify-content:center}
 #modal .sheet{background:var(--card);border:1px solid var(--border);border-radius:16px 16px 0 0;width:100%;max-width:520px;padding:16px;max-height:88vh;overflow-y:auto}
 #modal h3{margin:0 0 6px}
-#modal label{display:block;font-size:12px;color:var(--muted);margin:10px 0 3px}
-#modal input,#modal select,#modal textarea{width:100%;background:var(--card2);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:9px;font:inherit;font-size:14px}
+#modal label{display:block;font-size:13.7px;color:var(--muted);margin:10px 0 3px}
+#modal input,#modal select,#modal textarea{width:100%;background:var(--card2);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:9px;font:inherit;font-size:16px}
 #modal textarea{min-height:52px;resize:vertical}
 .tagrow{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
-.tag{background:var(--card2);border:1px solid var(--border);border-radius:16px;padding:6px 11px;font-size:12px;cursor:pointer;user-select:none}
+.tag{background:var(--card2);border:1px solid var(--border);border-radius:16px;padding:6px 11px;font-size:13.7px;cursor:pointer;user-select:none}
 .tag.on{background:var(--blue-bg);border-color:var(--blue);color:#9cc0ff}
 button:focus-visible,.tag:focus-visible,.seg button:focus-visible,a:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
 @media (prefers-reduced-motion:reduce){
@@ -142,21 +166,21 @@ button:focus-visible,.tag:focus-visible,.seg button:focus-visible,a:focus-visibl
 #tkModal,#tsModal{position:fixed;inset:0;z-index:62;background:rgba(0,0,0,.6);display:none;align-items:flex-end;justify-content:center}
 #tkModal .sheet,#tsModal .sheet{background:var(--card);border:1px solid var(--border);border-radius:16px 16px 0 0;width:100%;max-width:520px;padding:16px;max-height:88vh;overflow-y:auto}
 #tkModal h3,#tsModal h3{margin:0 0 6px}
-#tkModal label{display:block;font-size:12px;color:var(--muted);margin:10px 0 3px}
-#tkModal input{width:100%;background:var(--card2);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:9px;font:inherit;font-size:15px}
+#tkModal label{display:block;font-size:13.7px;color:var(--muted);margin:10px 0 3px}
+#tkModal input{width:100%;background:var(--card2);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:9px;font:inherit;font-size:17.1px}
 #chartFS{position:fixed;inset:0;z-index:70;background:var(--bg);display:none;flex-direction:column}
 #chartFS .fsbar{display:flex;gap:8px;align-items:center;padding:8px 10px;border-bottom:1px solid var(--border)}
 #chartFS .fsbody{flex:1;min-height:0}
 .chgrid{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:6px;height:70vh;margin-top:8px}
 .chcell{position:relative;border:1px solid var(--border);border-radius:8px;overflow:hidden;background:var(--card2)}
 .chcell .chtool{position:absolute;top:4px;right:4px;z-index:2;display:flex;gap:4px}
-.chcell .chtool button{padding:2px 7px;font-size:13px}
-.chcell input{position:absolute;top:4px;left:4px;z-index:2;width:88px;background:rgba(11,15,20,.82);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:3px 6px;font-size:12px}
+.chcell .chtool button{padding:2px 7px;font-size:14.8px}
+.chcell input{position:absolute;top:4px;left:4px;z-index:2;width:88px;background:rgba(11,15,20,.82);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:3px 6px;font-size:13.7px}
 @media(max-width:640px){.chgrid{grid-template-columns:1fr;grid-template-rows:repeat(4,44vh);height:auto}}
 #armModal{position:fixed;inset:0;z-index:64;background:rgba(0,0,0,.6);display:none;align-items:flex-end;justify-content:center}
 #armModal .sheet{background:var(--card);border:1px solid var(--border);border-radius:16px 16px 0 0;width:100%;max-width:520px;padding:16px}
-#armModal label{display:block;font-size:12px;color:var(--muted);margin:10px 0 3px}
-#armModal input{width:100%;background:var(--card2);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:9px;font:inherit;font-size:15px}
+#armModal label{display:block;font-size:13.7px;color:var(--muted);margin:10px 0 3px}
+#armModal input{width:100%;background:var(--card2);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:9px;font:inherit;font-size:17.1px}
 body:not(.scanning) .smoke{opacity:0!important;animation:none!important}
 body:not(.scanning) .smkp{opacity:0!important;animation:none!important}
 body:not(.scanning) .smk0,body:not(.scanning) .s0,body:not(.scanning) .s1,body:not(.scanning) .s2,body:not(.scanning) .s3{opacity:0!important;animation:none!important}
@@ -167,75 +191,241 @@ body.boom .ember{opacity:1!important;animation:none!important}
 body.boom .smoke,body.boom .smkp{opacity:0!important}
 body.boom #logo{animation:boom .85s ease-out!important}
 @keyframes boom{0%{transform:scale(1) rotate(0);filter:none}18%{transform:scale(1.5) rotate(-7deg);filter:brightness(2.4) saturate(2)}42%{transform:scale(1.75) rotate(6deg);filter:brightness(3)}100%{transform:scale(.15) rotate(24deg);opacity:0;filter:brightness(.4)}}
-.apxstrip{font-size:12px;line-height:1.5}
+.apxstrip{font-size:13.7px;line-height:1.5}
 .apxsb summary{cursor:pointer;list-style:none}
 details.cdrop>summary{cursor:pointer;list-style:none}
 details.cdrop>summary::-webkit-details-marker{display:none}
 .apxsb summary::-webkit-details-marker{display:none}
 .apexop{background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:9px;margin-top:6px;cursor:pointer}
-.apexop button{font-size:12px}
+.apexop button{font-size:13.7px}
 /* ===== Decision Engine (dx) ===== */
 /* ===== shared legend component ===== */
 .lgd{margin-top:8px;border-top:1px solid var(--border);padding-top:6px}
-.lgd>summary{cursor:pointer;font-size:11.5px;color:var(--muted);list-style:none;user-select:none}
+.lgd>summary{cursor:pointer;font-size:13.1px;color:var(--muted);list-style:none;user-select:none}
 .lgd>summary::-webkit-details-marker{display:none}
 .lgd>summary::marker{content:''}
-.lgd>summary:before{content:'\24D8  ';font-size:12px}
+.lgd>summary:before{content:'\24D8  ';font-size:13.7px}
 .lgd[open]>summary{color:var(--text)}
 .lgdgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:5px 14px;margin:7px 0 2px}
-.lgdi{display:flex;gap:8px;align-items:flex-start;font-size:11.5px;line-height:1.45;color:var(--muted)}
+.lgdi{display:flex;gap:8px;align-items:flex-start;font-size:13.1px;line-height:1.45;color:var(--muted)}
 .lgdk{flex:0 0 auto;min-width:22px;text-align:center;color:var(--text);font-weight:700}
 .lgdsw{display:inline-block;width:15px;height:9px;border-radius:3px;margin-top:3px}
-.lgdh{grid-column:1/-1;font-size:10px;font-weight:800;color:var(--text);letter-spacing:.5px;text-transform:uppercase;opacity:.75;margin-top:7px}
+.lgdh{grid-column:1/-1;font-size:11.4px;font-weight:800;color:var(--text);letter-spacing:.5px;text-transform:uppercase;opacity:.75;margin-top:7px}
 .lgdh:first-child{margin-top:0}
-.dxstale{margin-top:8px;padding:8px 10px;border-radius:9px;border:1px solid var(--amber);background:var(--amber-bg);color:var(--amber);font-size:12px}
-.dxwhy{background:linear-gradient(180deg,rgba(59,130,246,.10),rgba(59,130,246,.02));border:1px solid var(--border);border-left:3px solid #3b82f6;border-radius:10px;padding:11px 12px;margin-top:8px}
+.dxstale{margin-top:8px;padding:8px 10px;border-radius:9px;border:1px solid var(--amber);background:var(--amber-bg);color:var(--amber);font-size:13.7px}
+.dxwhy{background:linear-gradient(180deg,rgba(123,160,196,.10),rgba(123,160,196,.02));border:1px solid var(--border);border-left:3px solid #7ba0c4;border-radius:10px;padding:11px 12px;margin-top:8px}
 .dxresult{border:1px solid var(--border);border-radius:12px;padding:12px;margin-top:9px;background:var(--card2)}
-.dxsteps{display:flex;align-items:center;gap:5px;margin-top:10px;font-size:11px;color:var(--muted)}
+.dxsteps{display:flex;align-items:center;gap:5px;margin-top:10px;font-size:12.5px;color:var(--muted)}
 .dxsteps i{display:block;width:22px;height:4px;border-radius:2px;background:var(--card2)}
-.dxsteps i.now{background:#3b82f6}.dxsteps i.done{background:var(--green)}
+.dxsteps i.now{background:#7ba0c4}.dxsteps i.done{background:var(--green)}
 .dxsteps span{margin-left:5px}
 .dxopts{display:grid;grid-template-columns:repeat(auto-fit,minmax(88px,1fr));gap:7px;margin-top:9px}
 .dxopt{display:flex;flex-direction:column;align-items:center;gap:1px;padding:9px 6px;border-radius:10px;border:1px solid var(--border);background:var(--card2);color:var(--text);cursor:pointer;font-family:inherit;text-align:center}
-.dxopt b{font-size:15px;color:var(--green)}
-.dxopt span{font-size:10.5px;color:var(--muted);line-height:1.25}
-.dxopt.on{border-color:#3b82f6;background:rgba(59,130,246,.14)}
+.dxopt b{font-size:17.1px;color:var(--green)}
+.dxopt span{font-size:12px;color:var(--muted);line-height:1.25}
+.dxopt.on{border-color:#7ba0c4;background:rgba(123,160,196,.14)}
 .dxvs{display:flex;align-items:center;justify-content:center;gap:14px;margin-top:10px;text-align:center}
 .dxvs>div{flex:1}
-.dxvs b{display:block;font-size:24px;font-weight:800}
-.dxvs span{display:block;font-size:11px;color:var(--muted);margin-top:2px}
-.dxvsarrow{flex:0 0 auto!important;font-size:19px;color:var(--muted)}
-.dxkey{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:11.5px;color:var(--muted);align-items:center}
+.dxvs b{display:block;font-size:27.4px;font-weight:800}
+.dxvs span{display:block;font-size:12.5px;color:var(--muted);margin-top:2px}
+.dxvsarrow{flex:0 0 auto!important;font-size:21.7px;color:var(--muted)}
+.dxkey{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:13.1px;color:var(--muted);align-items:center}
 .dxkey i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px}
 .dxkey b{color:var(--text)}
 .dxinline{margin-top:10px;padding-top:10px;border-top:1px solid var(--border)}
-.dxinline .dxhealth{font-size:26px;line-height:1}
+.dxinline .dxhealth{font-size:29.6px;line-height:1}
 .dxrow{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
-.dxhealth{font-size:22px;font-weight:800}
+.dxhealth{font-size:25.1px;font-weight:800}
 .cychead{border:1px solid var(--border);border-left:3px solid var(--border);border-radius:10px;padding:11px 12px;background:var(--card2)}
 .cycbar{position:relative;display:flex;height:16px;border-radius:8px;overflow:hidden;margin-top:10px;background:var(--card2)}
 .cycbar i{display:block;height:100%}
 .cycnow{position:absolute;top:-3px;bottom:-3px;width:3px;background:#fff;border-radius:2px;box-shadow:0 0 0 1px rgba(0,0,0,.55)}
-.cyclabs{display:flex;margin-top:3px;font-size:9.5px;color:var(--muted)}
+.cyclabs{display:flex;margin-top:3px;font-size:10.8px;color:var(--muted)}
 .cyclabs span{text-align:center;overflow:hidden;white-space:nowrap}
-.cycwarn{margin-top:9px;padding:8px 10px;border-radius:9px;border:1px solid var(--border);background:var(--card2);font-size:11.5px;color:var(--muted)}
-.dxmeter{display:flex;align-items:center;gap:8px;margin-top:6px;font-size:12px}
+.cycwarn{margin-top:9px;padding:8px 10px;border-radius:9px;border:1px solid var(--border);background:var(--card2);font-size:13.1px;color:var(--muted)}
+.dxmeter{display:flex;align-items:center;gap:8px;margin-top:6px;font-size:13.7px}
 .dxmeter>span:first-child{flex:0 0 60px;color:var(--muted)}
 .dxmeter .track{flex:1;min-width:60px;height:10px;background:var(--card2);border-radius:5px;overflow:hidden}
 .dxmeter .track i{display:block;height:100%;border-radius:5px}
 .dxmeter>b{flex:0 0 36px;text-align:right;color:var(--muted)}
-.dxmeter>em{flex:0 0 56px;font-style:normal;font-size:10px;color:var(--muted)}
+.dxmeter>em{flex:0 0 56px;font-style:normal;font-size:11.4px;color:var(--muted)}
 .dxmeter.lead>span:first-child{color:var(--text);font-weight:700}
 .dxmeter.lead>b{color:var(--text)}
-.dxbreak{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:8px;font-size:11px;color:var(--muted)}
+.dxbreak{display:flex;flex-wrap:wrap;gap:5px 12px;margin-top:8px;font-size:12.5px;color:var(--muted)}
+.dxbreak>span{background:var(--card2);border:1px solid var(--border);border-radius:7px;padding:2px 7px;cursor:help}
 .dxcard{background:var(--card2);border:1px solid var(--border);border-radius:12px;padding:12px;margin-top:8px}
-.dxcheck{display:flex;justify-content:space-between;gap:8px;font-size:12.5px;padding:2px 0}
+.dxcheck{display:flex;justify-content:space-between;gap:8px;font-size:14.2px;padding:2px 0}
 .dxcheck b.pos{color:var(--green)}.dxcheck b.neg{color:var(--red)}
-.dxconf{font-size:26px;font-weight:800}
-.dxmini{display:inline-block;padding:2px 8px;border-radius:8px;font-size:11px;background:var(--card);border:1px solid var(--border);color:var(--muted)}
+.dxconf{font-size:29.6px;font-weight:800}
+.dxmini{display:inline-block;padding:2px 8px;border-radius:8px;font-size:12.5px;background:var(--card);border:1px solid var(--border);color:var(--muted)}
 .jlist{max-height:460px;overflow-y:auto;-webkit-overflow-scrolling:touch}
 .jrow{padding:7px 8px;margin-top:5px;border-radius:9px;background:var(--card2);border:1px solid var(--border)}
-.jhead{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:13px}
+.jhead{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:14.8px}
+
+/* ============================================================================
+   CALM LAYER — visual only. No selector above is removed; these rules refine
+   what is already there. Nothing here touches an id, a class the scripts read,
+   or any behaviour.
+
+   The problems being corrected, in order of how much stress each one adds:
+
+   1. MOTION. The eye cannot ignore movement — it is pre-attentive, so a
+      scrolling ticker or a flashing chip is processed as a possible threat
+      before you decide whether to care. Every looping animation is stilled or
+      slowed below the threshold where it pulls focus.
+   2. ALARM COLOUR. Handled in the palette above.
+   3. CONTRAST. Maximum contrast is a stimulant. Body text sits a step softer.
+   4. DENSITY. Cramped layouts read as urgent. Line-height and padding open up;
+      breathing room is the cheapest calm available.
+   5. HARD EDGES. Every 1px high-contrast border is a small visual interruption.
+      Borders soften; depth comes from a gentle shadow instead of an outline.
+   6. SHOUTING. ALL-CAPS with tight tracking reads as raised voice. Headline
+      weight comes down, letter-spacing opens, size drops slightly.
+   ============================================================================ */
+
+/* ---- 1. Motion: still the things that loop ---- */
+#newstrack{animation-duration:190s}                 /* was 70s — now a drift */
+#newsbar{opacity:.82;transition:opacity .4s var(--ease)}
+#newsbar:hover,#newsbar:active{opacity:1}
+.chip.flash{animation:none}                          /* no flashing on new setups */
+@keyframes fl{50%{background:var(--green-bg)}}
+.ember{animation-duration:5.5s}                      /* slow ember breath */
+@keyframes embp{0%,100%{opacity:.5}50%{opacity:.78}}
+.smoke,.smkp{animation-duration:6s}
+
+/* ---- 2. Typography: quieter voice ---- */
+body{font-size:16.5px;line-height:1.62;letter-spacing:.1px;
+ -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
+h1{font-size:18.2px;font-weight:650}
+.verdict h2{font-size:20.5px;font-weight:600;letter-spacing:.6px;
+ text-transform:none;gap:11px}
+.sub,.foot{line-height:1.65}
+.foot{font-size:12.5px}
+b,strong{font-weight:650}                            /* 700+ reads as emphatic */
+
+/* ---- 3. Surfaces: soft depth instead of hard outlines ---- */
+.card{border-radius:var(--radius);padding:16px;margin:12px;
+ border-color:var(--border);box-shadow:var(--shadow)}
+.verdict{border-radius:var(--radius);padding:17px 16px;margin:12px;
+ box-shadow:var(--shadow)}
+.dxcard,.rbox,.chip,.mv,.apexop,.jrow,.lvl,.dxresult,.cychead,.cycwarn{
+ border-radius:var(--radius-sm);box-shadow:none}
+.dxcard{padding:13px}
+.rbox{padding:10px 12px}
+
+/* ---- 4. State surfaces: tint, do not flood ----
+   A red-gradient panel fills the visual field with alarm. A calm build uses a
+   near-neutral surface and carries the state in a single edge and the word
+   itself, which is where the meaning actually lives. */
+.verdict.go{background:linear-gradient(180deg,rgba(127,174,139,.09),rgba(22,29,38,.55));
+ border-color:rgba(127,174,139,.42)}
+.verdict.caution{background:linear-gradient(180deg,rgba(211,162,102,.08),rgba(22,29,38,.55));
+ border-color:rgba(211,162,102,.40)}
+.verdict.stand{background:linear-gradient(180deg,rgba(193,148,144,.08),rgba(22,29,38,.55));
+ border-color:rgba(193,148,144,.40)}
+#lossBanner{background:rgba(193,148,144,.10)!important;border-color:rgba(193,148,144,.45)!important;
+ font-weight:600!important;border-radius:var(--radius-sm)!important;box-shadow:none}
+
+/* ---- 5. Controls: softer, larger targets ---- */
+button.primary{background:var(--blue);color:#0f1720;font-weight:650;
+ border-radius:var(--radius-sm);padding:10px 20px;
+ transition:background .18s var(--ease),transform .18s var(--ease)}
+button.primary:hover{background:#8bacd0}
+button.primary:active{transform:scale(.985)}
+button.ghost{border-radius:var(--radius-sm);padding:9px 13px;
+ transition:background .18s var(--ease),border-color .18s var(--ease)}
+button.ghost:hover{background:var(--card);border-color:#2f3a47}
+.seg{border-radius:var(--radius-sm)}
+.seg button{padding:9px 13px;transition:background .18s var(--ease),color .18s var(--ease)}
+.seg button.on{background:var(--blue-bg);color:#a8c4de;font-weight:650}
+.tag{border-radius:var(--radius-sm)}
+input[type=number],select,#modal input,#modal select,#modal textarea{border-radius:var(--radius-sm)}
+button:focus-visible,.tag:focus-visible,.seg button:focus-visible,a:focus-visible{
+ outline:2px solid rgba(123,160,196,.75);outline-offset:2px}
+
+/* ---- 6. Header: recede, do not compete ---- */
+header{background:rgba(19,24,32,.90);border-bottom-color:rgba(37,47,59,.7);
+ backdrop-filter:blur(14px) saturate(115%);padding:12px 16px}
+/* The header carries an extra step beyond the global scale. It was the most
+   cramped region in the app — five stats, two selectors and a button sharing
+   one strip — and squinting at a 9px label is its own small stress. */
+#hdrStats{gap:13px}
+#hdrStats b{font-weight:650;font-size:16.5px;letter-spacing:-.2px}
+#hdrStats span{letter-spacing:.3px;text-transform:lowercase;font-size:11.5px}
+#verBadge{font-size:12.5px}
+#statusLine{font-size:12.5px}
+.seg button{font-size:14.5px}
+header h1{font-size:18px}
+@media(max-width:520px){#hdrStats b{font-size:15.5px}#hdrStats span{font-size:11px}}
+
+/* ---- 7. Data display: numbers should be readable, not loud ---- */
+.dxhealth,.dxconf{font-weight:600;letter-spacing:-.5px;font-variant-numeric:tabular-nums}
+.dxinline .dxhealth{font-size:34.2px}
+.chip b,.rbox b,.lvl b,.dxvs b{font-weight:650;font-variant-numeric:tabular-nums}
+td,th{font-variant-numeric:tabular-nums}
+th{border-bottom-width:1px;font-weight:600;letter-spacing:.3px}
+td{border-bottom-color:rgba(37,47,59,.55);padding:10px 7px}
+tr.sig{transition:background .16s var(--ease)}
+tr.sig:hover{background:rgba(123,160,196,.05)}
+.pill{font-weight:650;padding:3px 9px}
+.strong{background:rgba(127,174,139,.22);color:var(--green)}  /* was solid fill */
+.watch{background:rgba(211,162,102,.16);color:var(--amber)}
+
+/* ---- 8. Meters and bars: gentler ---- */
+.dxmeter{margin-top:8px}
+.dxmeter .track{height:8px;border-radius:4px;background:rgba(37,47,59,.6)}
+.dxmeter .track i{border-radius:4px;transition:width .5s var(--ease)}
+.scorebar{height:6px;border-radius:3px}
+.prog{height:3px;border-radius:2px}
+.prog i{transition:width .4s var(--ease)}
+.sentbar{background:linear-gradient(90deg,var(--red),#4d5866 50%,var(--green));
+ height:6px;border-radius:3px;opacity:.75}
+.sentbar i{background:var(--text);opacity:.9}
+.cycbar{height:13px;border-radius:7px}
+.tile{border-radius:9px;padding:6px 3px}
+
+/* ---- 9. Disclosures: invitations, not demands ---- */
+summary{padding:5px 0;transition:color .18s var(--ease)}
+summary:hover{color:var(--text)}
+details.cdrop>summary{padding:2px 0 6px}
+.lgd{border-top-color:rgba(37,47,59,.6);padding-top:8px;margin-top:10px}
+.lgdgrid{gap:7px 16px}
+.lgdi{line-height:1.55}
+
+/* ---- 10. Modals: settle in, no snap ---- */
+#modal .sheet,#tkModal .sheet,#tsModal .sheet,#armModal .sheet{
+ border-radius:20px 20px 0 0;padding:20px;
+ box-shadow:0 -8px 40px -12px rgba(0,0,0,.6);
+ animation:sheetIn .28s var(--ease)}
+@keyframes sheetIn{from{transform:translateY(14px);opacity:.4}to{transform:none;opacity:1}}
+#modal,#tkModal,#tsModal,#armModal{background:rgba(9,12,16,.62);backdrop-filter:blur(3px)}
+
+/* ---- 11. Spacing rhythm ---- */
+.dxinline{margin-top:14px;padding-top:13px;border-top-color:rgba(37,47,59,.6)}
+.verdict ul{line-height:1.75;margin-top:9px}
+.verdict li{padding:2px 0}
+#macroRow{margin-top:9px;font-size:13.1px}
+#macroRow .sub{margin-top:0}
+/* Two states on purpose. A calendar entry eight days out is information and is
+   styled as such; only a high-impact event inside ~40h earns amber. A box that
+   is always amber teaches you to ignore amber. */
+#econWarn{margin-top:7px;font-size:13.1px;line-height:1.55;
+ border-radius:var(--radius-sm);padding:9px 11px;
+ color:var(--muted);background:rgba(37,47,59,.32);border:1px solid rgba(37,47,59,.8)}
+#econWarn b{color:var(--text);font-weight:650}
+#econWarn.hot{color:var(--amber);background:rgba(211,162,102,.09);
+ border-color:rgba(211,162,102,.30)}
+#econWarn.hot b{color:var(--amber)}
+#econWarn .sub{margin-top:2px;color:inherit;opacity:.85}
+#econWarn i{font-style:normal;opacity:.7}
+.dxbreak{gap:6px 10px;margin-top:10px}
+.dxbreak>span{padding:3px 9px;border-radius:8px;border-color:rgba(37,47,59,.75)}
+
+/* ---- 12. Honour the OS reduced-motion setting completely ---- */
+@media (prefers-reduced-motion:reduce){
+ #newstrack,.ember,.smoke,.smkp{animation:none!important}
+ .sheetIn,#modal .sheet,#tkModal .sheet,#tsModal .sheet,#armModal .sheet{animation:none!important}
+}
 </style>
 </head>
 <body>
@@ -278,13 +468,13 @@ details.cdrop>summary::-webkit-details-marker{display:none}
   <circle cx="84.8" cy="21.6" r="0.45" fill="#8a847e"/>
   <circle cx="88.4" cy="20.4" r="0.4" fill="#a39c94"/>
  </g>
- <path class="smoke s0" d="M89 12 C 93 7, 87 4, 92 0.8" fill="none" stroke="#22c55e" stroke-width="5" stroke-linecap="round" opacity="0.25" filter="url(#sb2)"/>
- <path class="smoke s1" d="M87.5 11 C 91.5 7, 85.5 4, 90.5 0.8" fill="none" stroke="#22c55e" stroke-width="2.2" stroke-linecap="round" filter="url(#sb1)"/>
+ <path class="smoke s0" d="M89 12 C 93 7, 87 4, 92 0.8" fill="none" stroke="#7fae8b" stroke-width="5" stroke-linecap="round" opacity="0.25" filter="url(#sb2)"/>
+ <path class="smoke s1" d="M87.5 11 C 91.5 7, 85.5 4, 90.5 0.8" fill="none" stroke="#7fae8b" stroke-width="2.2" stroke-linecap="round" filter="url(#sb1)"/>
  <path class="smoke s2" d="M92 12.5 C 96 8.5, 90 5.5, 95 1.5" fill="none" stroke="#4ade80" stroke-width="1.7" stroke-linecap="round" filter="url(#sb1)"/>
  <path class="smoke s3" d="M97 14 C 101 10.5, 96 7.5, 100 4" fill="none" stroke="#86efac" stroke-width="1.2" stroke-linecap="round" filter="url(#sb1)"/>
  <circle class="smkp" cx="89" cy="7.5" r="1.1" fill="#4ade80" filter="url(#sb1)"/>
  <circle class="smkp p2" cx="94" cy="9" r="0.8" fill="#86efac" filter="url(#sb1)"/>
-</svg><span style="font-size:11px;color:var(--green);font-weight:800;letter-spacing:.5px">V.420</span><span class="dot" id="statusDot" style="margin-left:4px;margin-bottom:4px"></span></h1>
+</svg><span id="verBadge" style="color:var(--green);font-weight:700;letter-spacing:.4px">V.420</span><span class="dot" id="statusDot" style="margin-left:4px;margin-bottom:4px"></span></h1>
    <div class="sub" id="statusLine">ready</div>
   </div>
   <div class="row">
@@ -295,18 +485,31 @@ details.cdrop>summary::-webkit-details-marker{display:none}
  <div class="row" style="margin-top:8px">
   <div class="seg" id="modeSeg"></div>
   <div class="seg" id="profSeg"></div>
+  <div id="hdrStats" title="Live scan stats — updates every scan">
+   <span><b id="cScanned">–</b>scanned</span>
+   <span id="chipStrong"><b id="cStrong" style="color:var(--green)">–</b>strong</span>
+   <span><b id="cWatch" style="color:var(--amber)">–</b>watch</span>
+   <span><b id="cTime">–</b>last scan</span>
+  </div>
  </div>
  <div id="segHelp" class="sub" style="margin-top:4px"></div>
+ <div class="err" id="err"></div>
  <div class="prog" id="prog"><i id="progBar"></i></div>
 </header>
-<div id="lossBanner" style="display:none;margin:10px 12px;background:var(--red-bg);color:var(--red);font-weight:700;padding:10px 12px;border-radius:10px;border:1px solid var(--red)">🛑 Daily loss limit reached — you are done for today. The best trade now is no trade.</div>
+<div id="lossBanner" style="display:none;margin:10px 12px;background:var(--red-bg);color:var(--red);font-weight:700;padding:10px 12px;border-radius:10px;border:1px solid var(--red)">You have reached your daily loss limit. Trading is done for today — that is the plan working, not a failure.</div>
 <div class="verdict" id="verdict" role="status" aria-live="polite">
  <h2 id="vCall">Run a scan for today's read</h2>
  <div id="vBody" class="foot" style="margin-top:6px">The regime engine will judge whether conditions favor trading right now — and explain why.</div>
+ <!-- Macro line: dollar strength and the next big USD event. These sit here,
+      directly under the session line in the reasons above, because they are the
+      same kind of fact — outside context that moves the verdict. They used to
+      live in the Market view panel where they were easy to miss. -->
+ <div id="macroRow"><span class="sub" id="dxyLine">DXY —</span></div>
+ <div id="econWarn" style="display:none"></div>
  <div class="dxinline">
   <div class="dxrow">
    <span class="dxhealth" id="dxHealthNum">–</span>
-   <span class="sub" style="line-height:1.25">market<br>health</span>
+   <span class="sub" style="line-height:1.25">market health<br><span id="dxHealthCap" style="opacity:.72">raw score</span></span>
   </div>
   <div id="dxRegimeBars"></div>
   <div id="dxRegimeRead" style="margin-top:7px"></div>
@@ -314,7 +517,7 @@ details.cdrop>summary::-webkit-details-marker{display:none}
   <div class="foot" id="dxCoach" style="margin-top:6px">Run a scan to activate the Decision Engine (test build — not the production app).</div>
   <details class="lgd"><summary>What am I looking at?</summary><div class="lgdgrid">
    <div class="lgdh">The three meters — what kind of market this is</div>
-   <div class="lgdi"><span class="lgdsw" style="background:#3b82f6"></span><span><b>Trending</b> — price is moving directionally. Breakouts and pullbacks work.</span></div>
+   <div class="lgdi"><span class="lgdsw" style="background:#7ba0c4"></span><span><b>Trending</b> — price is moving directionally. Breakouts and pullbacks work.</span></div>
    <div class="lgdi"><span class="lgdsw" style="background:#8494ab"></span><span><b>Ranging</b> — chopping sideways. Fades and reversals work.</span></div>
    <div class="lgdi"><span class="lgdsw" style="background:var(--amber)"></span><span><b>Volatile</b> — big erratic swings, no clean direction. Stops get hit on noise.</span></div>
    <div class="lgdi" style="grid-column:1/-1"><span class="lgdk">%</span><span>The three always add up to 100%. Each meter has its own 0&ndash;100% scale and the strongest is highlighted and marked &ldquo;strongest&rdquo;, so you never have to compare bar widths yourself.</span></div>
@@ -324,56 +527,49 @@ details.cdrop>summary::-webkit-details-marker{display:none}
    <div class="lgdi" style="grid-column:1/-1"><span class="lgdk">&lt;45</span><span>If nothing reaches 45%, no regime is in charge. Switching styles costs the most here; waiting is legitimate.</span></div>
    <div class="lgdi" style="grid-column:1/-1"><span class="lgdk">&#9888;</span><span><b>Volatile overrides the other two.</b> Above 35% cut your size whatever else the meters say; when it is the strongest meter, the honest answer is usually no trade.</span></div>
    <div class="lgdi" style="grid-column:1/-1"><span class="lgdk">&#9432;</span><span>The app writes the interpretation in plain English directly underneath the meters and updates it every scan. The rules above are so you can check its reasoning rather than take it on faith.</span></div>
-   <div class="lgdh">The big number = market health, 0&ndash;100</div>
-   <div class="lgdi"><span class="lgdk">70+</span><span>Healthy — liquidity, trend clarity and calm funding all line up.</span></div>
-   <div class="lgdi"><span class="lgdk">55&ndash;70</span><span>Workable but mixed. Be choosier and trade smaller.</span></div>
-   <div class="lgdi"><span class="lgdk">&lt;55</span><span>Poor conditions. Most edges evaporate here — waiting is a position.</span></div>
-   <div class="lgdh">The headline verdict</div>
-   <div class="lgdi"><span class="lgdk">&#128994;</span><span><b>GO</b> — conditions clear your floor with room to spare. Normal sizing is defensible.</span></div>
-   <div class="lgdi"><span class="lgdk">&#128993;</span><span><b>CAUTION</b> — workable but mixed. Be choosier and trade smaller.</span></div>
-   <div class="lgdi"><span class="lgdk">&#128308;</span><span><b>STAND DOWN</b> — below your floor, or your daily loss limit is hit. Protect capital.</span></div>
-   <div class="lgdi" style="grid-column:1/-1"><span class="lgdk">&#9432;</span><span>The verdict starts from the market health score, then adjusts for what health does not measure: trading session, dollar strength, and whether the scanner actually found anything. The bullet list above shows every factor that moved it.</span></div>
+   <div class="lgdh">The two numbers &mdash; and why they differ</div>
+   <div class="lgdi" style="grid-column:1/-1"><span class="lgdk">&#9432;</span><span>The <b>big number</b> is raw market health, built from the six ingredients listed under the meters. The number <b>next to the verdict</b> is that same score after adjusting for things health cannot see: trading session, dollar strength, your daily loss limit, and whether the scanner found anything. The line at the top of this box shows the arithmetic, so the two can never look like they disagree.</span></div>
+   <div class="lgdi"><span class="lgdk">&#128994;</span><span><b>GO</b> &mdash; 15+ above your floor. Healthy: liquidity, trend clarity and calm funding line up. Normal sizing is defensible.</span></div>
+   <div class="lgdi"><span class="lgdk">&#128993;</span><span><b>CAUTION</b> &mdash; at or just above your floor. Workable but mixed: be choosier and trade smaller.</span></div>
+   <div class="lgdi"><span class="lgdk">&#128308;</span><span><b>STAND DOWN</b> &mdash; below your floor, or your daily loss limit is hit. Most edges evaporate here; waiting is a position.</span></div>
   </div></details>
+  <details class="lgd" id="mvDrop" ontoggle="secRemember&amp;&amp;secRemember(this)">
+   <summary><b>Market view</b> <span class="sub">· sentiment, movers, heat map</span></summary>
+   <div class="row" style="margin-top:6px">
+    <div style="flex:1;min-width:170px">
+     <div class="sub">Sentiment: <b id="sentLabel">—</b></div>
+     <div class="sentbar"><i id="sentFill"></i></div>
+    </div>
+    <div class="sub" id="avgRR" title="Average reward-to-risk of current signals — 1:2.0 means signals target twice what they risk">avg R:R —</div>
+    <div class="sub" id="btcReg"></div>
+    <div class="seg" id="sentSeg"></div>
+    <input type="text" id="hq" placeholder="🔍 asset" style="width:84px">
+   </div>
+   <div class="heat" id="heat"></div>
+   <div class="movers" id="movers" style="margin-top:8px"></div>
+   <div class="row" style="margin-top:10px">
+    <a class="ghost" style="text-decoration:none;font-size:13.7px;color:#9cc0ff" target="_blank" rel="noopener" href="https://www.coinglass.com/pro/futures/LiquidationHeatMap">🔥 BTC liquidation heatmap ↗</a>
+   </div>
+  </details>
  </div>
 </div>
 <div class="card" id="liveCard">
  <details class="cdrop" id="liveDrop" open ontoggle="secRemember(this)">
-  <summary><b style="font-size:14px">💼 Your account &amp; positions</b> <span class="sub">· live from Pacifica</span></summary>
+  <summary><b style="font-size:16px">💼 Your account &amp; positions</b> <span class="sub">· live from Pacifica</span></summary>
   <div class="row" style="justify-content:flex-end;margin-top:4px"><button class="ghost" id="liveRefresh" aria-label="refresh live account">↻ refresh</button></div>
   <div id="liveBody" class="foot" style="margin-top:8px">Add your Pacifica wallet in Settings to see your balance, positions and P/L here.</div>
  </details>
 </div>
-<div class="card" id="ovCard">
- <details class="cdrop" id="ovDrop" open ontoggle="secRemember(this)">
- <summary><b style="font-size:14px">Market view</b> <span class="sub" id="dxyLine">DXY —</span></summary>
- <div id="econWarn" style="display:none;margin-top:8px;font-size:12px;color:var(--amber)"></div>
- <div class="row" style="margin-top:6px">
-  <div style="flex:1;min-width:170px">
-   <div class="sub">Sentiment: <b id="sentLabel">—</b></div>
-   <div class="sentbar"><i id="sentFill"></i></div>
-  </div>
-  <div class="sub" id="avgRR" title="Average reward-to-risk of current signals — 1:2.0 means signals target twice what they risk">avg R:R —</div>
-  <div class="sub" id="btcReg"></div>
-  <div class="sub" id="sessLbl"></div>
-  <div class="seg" id="sentSeg"></div>
-  <input type="text" id="hq" placeholder="🔍 asset" style="width:84px">
- </div>
- <div class="heat" id="heat"></div>
- <div class="row" style="margin-top:10px">
-  <a class="ghost" style="text-decoration:none;font-size:12px;color:#9cc0ff" target="_blank" rel="noopener" href="https://www.coinglass.com/pro/futures/LiquidationHeatMap">🔥 BTC liquidation heatmap ↗</a>
- </div>
- </details>
-</div>
 <div class="card" id="cycCard">
 <details class="cdrop" id="cycDrop" open ontoggle="S.cycOpen=this.open;try{localStorage.setItem('petpapp_settings',JSON.stringify(S))}catch(e){}">
-<summary><b style="font-size:14px">₿ Bitcoin’s 4-year cycle</b> <span class="sub" id="cycSum">· long-range context ▾</span></summary>
+<summary><b style="font-size:16px">₿ Bitcoin’s 4-year cycle</b> <span class="sub" id="cycSum">· long-range context ▾</span></summary>
 <div id="cycBody" class="foot" style="margin-top:8px"></div>
 </details>
 </div>
 <div class="card" id="apexCard">
  <details class="cdrop" id="apexDrop" open ontoggle="secRemember(this)">
-  <summary><b style="font-size:14px">🧠 APEX Command Center</b> <span class="sub">· regime · ranked · veto · memory</span></summary>
-  <div class="row" style="justify-content:space-between;margin-top:6px"><span><span id="apexVer" class="sub"></span> <span id="apexDb" class="sub">☁ memory db: connecting…</span></span><button class="ghost" onclick="apexDaily()">🤖 AI read</button></div>
+  <summary><b style="font-size:16px">🧠 APEX Command Center</b> <span class="sub">· regime · ranked · veto · memory</span></summary>
+  <div class="row" style="justify-content:space-between;margin-top:6px"><span><span id="apexDb" class="sub">☁ memory db: connecting…</span></span><button class="ghost" onclick="apexDaily()">🤖 AI read</button></div>
   <div id="apexBody" class="foot" style="margin-top:8px">Learning starts with your first scan. APEX logs every setup, tracks what actually happened, and calibrates itself from real outcomes.</div>
   <div id="apexAiOut" class="foot" style="display:none;margin-top:8px;border-top:1px solid var(--border);padding-top:8px"></div>
   <details class="lgd"><summary>What these numbers mean</summary><div class="lgdgrid">
@@ -384,14 +580,14 @@ details.cdrop>summary::-webkit-details-marker{display:none}
    <div class="lgdi"><span class="lgdk">&#129302;</span><span>When the robot last ran. Amber past ~45 minutes means the scheduled job may be stalled.</span></div>
    <div class="lgdi"><span class="lgdk">&#128683;</span><span><b>Blocked for your safety</b> — hit a veto rule (crowded funding, risk-off regime, event risk). Shown so the reason is visible.</span></div>
    <div class="lgdi"><span class="lgdk">&#9888;</span><span><b>Warn</b> — a concern was raised but not disqualifying. Proceed smaller.</span></div>
-   <div class="lgdi"><span class="lgdk">Market mode</span><span>The regime label the whole engine is currently working under: chop, risk-off, trending-calm or trending-volatile.</span></div>
+   <div class="lgdi"><span class="lgdk">Filing under</span><span>Which bucket today's conditions land in (chop, risk-off, trending-calm, trending-volatile). This is not a second opinion on the regime &mdash; the meters at the top of the app are the regime read. It is the label used to look up how past setups performed in conditions like today's.</span></div>
   </div></details>
  </details>
 </div>
 <div class="card" id="dxBestCard">
  <details class="cdrop" id="dxBestDrop" open ontoggle="secRemember(this)">
-  <summary><b style="font-size:14px">🎯 Best opportunity right now</b> <span class="sub" id="dxBestSub"></span></summary>
-  <div class="dxcard" style="margin-top:8px"><b style="font-size:13px">What this is</b>
+  <summary><b style="font-size:16px">🎯 Best opportunity right now</b> <span class="sub" id="dxBestSub"></span></summary>
+  <div class="dxcard" style="margin-top:8px"><b style="font-size:14.8px">What this is</b>
    <div class="sub" style="margin-top:4px">Out of every setup on the whole market, this is the <b>one or two worth your attention right now</b> &mdash; and nothing else.
    <b>This is a live snapshot, not a pick of the day:</b> it is recalculated from scratch on every scan, so it can change within minutes as prices move. Always check the timestamp before acting on it.
    Each is scored on its technical evidence <i>and</i> on how that exact setup has really performed in conditions like today's, then capped by how much history actually backs it.
@@ -421,19 +617,8 @@ details.cdrop>summary::-webkit-details-marker{display:none}
  </details>
 </div>
 <div class="card">
- <div class="chips">
-  <div class="chip"><b id="cScanned">–</b><span>markets scanned</span></div>
-  <div class="chip" id="chipStrong"><b id="cStrong" style="color:var(--green)">–</b><span>strong</span></div>
-  <div class="chip"><b id="cWatch" style="color:var(--amber)">–</b><span>watchlist</span></div>
-  <div class="chip"><b id="cReplay">–</b><span>backtest W-L</span></div>
-  <div class="chip"><b id="cTime">–</b><span>last scan</span></div>
- </div>
- <div class="movers" id="movers" style="margin-top:8px"></div>
- <div class="err" id="err"></div>
-</div>
-<div class="card">
 <details class="cdrop" id="sigDrop" ontoggle="S.sigOpen=this.open;try{localStorage.setItem('petpapp_settings',JSON.stringify(S))}catch(e){}">
-<summary><b style="font-size:14px">📋 Signals</b> <span class="sub">· every setup found this scan, sortable · tap to open ▾</span></summary>
+<summary><b style="font-size:16px">📋 Signals</b> <span class="sub">· every setup found this scan, sortable · tap to open ▾</span></summary>
  <div class="row" style="justify-content:flex-end;margin-top:8px">
   <div class="row">
    <input type="text" id="q" placeholder="🔍 sym"><button class="ghost" id="qClr" title="clear search">✕</button><button class="ghost" id="clrBtn" title="empty the signals box and start fresh">Clear</button><select id="dirFilter"><option value="">All</option><option value="long">Long</option><option value="short">Short</option></select>
@@ -479,7 +664,7 @@ details.cdrop>summary::-webkit-details-marker{display:none}
 </div>
 <div class="card" id="riskCard">
  <details class="cdrop" id="riskDrop" open ontoggle="secRemember(this)">
-  <summary><b style="font-size:14px">&#128737;&#65039; Portfolio risk</b> <span class="sub" id="riskLimit"></span></summary>
+  <summary><b style="font-size:16px">&#128737;&#65039; Portfolio risk</b> <span class="sub" id="riskLimit"></span></summary>
   <div id="riskBody" class="foot" style="margin-top:6px">No open trades &mdash; risk engine idle.</div>
   <details class="lgd"><summary>Risk terms explained</summary><div class="lgdgrid">
    <div class="lgdi"><span class="lgdk">Heat</span><span><b>Portfolio heat</b> — total % of your account you would lose if every open stop hit at once. This is the number that ends accounts.</span></div>
@@ -492,14 +677,14 @@ details.cdrop>summary::-webkit-details-marker{display:none}
 </div>
 <div class="card">
  <details class="cdrop" id="openDrop" open ontoggle="secRemember(this)">
-  <summary><b style="font-size:14px">📝 Paper &amp; untracked trades</b> <span class="sub">· plans with no live position</span></summary>
+  <summary><b style="font-size:16px">📝 Paper &amp; untracked trades</b> <span class="sub">· plans with no live position</span></summary>
   <div id="openTrades" style="margin-top:8px"></div>
   <div class="sub" id="setupStats" style="margin-top:8px"></div>
  </details>
 </div>
 <div class="card" id="journalCard">
  <details class="cdrop" id="journalDrop" open ontoggle="secRemember(this)">
-  <summary><b style="font-size:14px">&#128211; Journal &amp; edge</b> <span class="sub" id="jCount"></span></summary>
+  <summary><b style="font-size:16px">&#128211; Journal &amp; edge</b> <span class="sub" id="jCount"></span></summary>
   <div class="row" style="justify-content:flex-end;margin-top:4px"><button class="ghost" id="jReport">&#128228; Weekly edge</button><button class="ghost" id="jCsv">CSV</button></div>
   <div id="journalBody" class="foot" style="margin-top:8px">No closed trades logged yet.</div>
   <details class="lgd"><summary>How to read your edge stats</summary><div class="lgdgrid">
@@ -515,19 +700,19 @@ details.cdrop>summary::-webkit-details-marker{display:none}
 </div>
 <div class="card" id="dxReplayCard">
  <details class="cdrop" id="dxReplayDrop" ontoggle="secRemember(this)">
-  <summary><b style="font-size:14px">⏮ Trade Replay Mode</b> <span class="sub">— practise on real charts, outcome hidden</span></summary>
+  <summary><b style="font-size:16px">⏮ Trade Replay Mode</b> <span class="sub">— practise on real charts, outcome hidden</span></summary>
   <div id="dxReplayBody" style="margin-top:8px"></div>
  </details>
 </div>
 <div class="card" id="dxValCard">
  <details class="cdrop" id="dxValDrop" ontoggle="secRemember(this);if(this.open)dxRenderValidation()">
-  <summary><b style="font-size:14px">🔬 Does this actually work?</b> <span class="sub">— walk-forward test on your own history</span></summary>
+  <summary><b style="font-size:16px">🔬 Does this actually work?</b> <span class="sub">— walk-forward test on your own history</span></summary>
   <div id="dxValBody" style="margin-top:8px" class="foot">Open this to find out whether the app's confidence scores have actually predicted anything on your own history &mdash; tested honestly, with no hindsight.</div>
  </details>
 </div>
 <div class="card" id="chartsCard">
  <details class="cdrop" id="chartsDrop" ontoggle="secRemember(this)">
- <summary><b style="font-size:14px">📊 Charts</b></summary>
+ <summary><b style="font-size:16px">📊 Charts</b></summary>
  <div class="row" style="justify-content:flex-end;margin-top:6px"><button class="ghost" id="chLoad">Load 4 charts</button><label class="inl"><input type="checkbox" id="chCompat"> compat</label></div>
  <div id="chGrid" class="chgrid" style="display:none"></div>
  <div class="sub" id="chHint" style="margin-top:6px">Tap “Load 4 charts” for a 2×2 board. In each tile, type a symbol and tap ⛶ for full-screen. Charts run in an isolated sandbox so they cannot read your keys — if a chart stays blank, tick “compat”.</div>
@@ -535,19 +720,19 @@ details.cdrop>summary::-webkit-details-marker{display:none}
 </div>
 <div class="card">
  <details class="cdrop" id="favDrop" open ontoggle="secRemember(this)">
-  <summary><b style="font-size:14px">⭐ Favorites</b></summary>
+  <summary><b style="font-size:16px">⭐ Favorites</b></summary>
   <div class="movers" id="favStrip" style="margin-top:8px"></div>
  </details>
 </div>
 <div class="card">
  <details class="cdrop" id="alertsDrop" open ontoggle="secRemember(this)">
-  <summary><b style="font-size:14px">🔔 Price alerts</b></summary>
+  <summary><b style="font-size:16px">🔔 Price alerts</b></summary>
   <div id="alBox" style="margin-top:8px"></div>
  </details>
 </div>
 <details><summary>Scan history</summary><div class="card" style="margin:8px 0"><div id="histList"></div></div></details>
-<details><summary>What do the speed tabs (Scalp → Swing) and the profiles actually change?</summary><div class="card" style="margin:8px 0"><div class="foot" style="font-size:12px;line-height:1.65">
-<b style="color:var(--text);font-size:13px">SCALP / DAY / SWING — how fast you trade</b><br>
+<details><summary>What do the speed tabs (Scalp → Swing) and the profiles actually change?</summary><div class="card" style="margin:8px 0"><div class="foot" style="font-size:13.7px;line-height:1.65">
+<b style="color:var(--text);font-size:14.8px">SCALP / DAY / SWING — how fast you trade</b><br>
 These tabs change <b>which candles the scanner reads</b>. Every rule stays identical — but stops, targets and trade duration scale with the candle size.<br><br>
 <b>⚡ Scalp — tap it and:</b><br>
 · Signals are built from <b>5-minute</b> candles, trend confirmed on <b>15-minute</b><br>
@@ -564,7 +749,7 @@ These tabs change <b>which candles the scanner reads</b>. Every rule stays ident
 · It studies roughly the last <b>6 weeks</b><br>
 · Stops &amp; targets get <b>wide</b> (often several percent) — trades resolve in <b>days to weeks</b><br>
 · Fewest signals, slowest moving. Right if you only check once or twice a day.<br><br>
-<b style="color:var(--text);font-size:13px">CONSV / BALANCED / AGGR — how picky it is</b><br>
+<b style="color:var(--text);font-size:14.8px">CONSV / BALANCED / AGGR — how picky it is</b><br>
 These tabs change <b>the standards a setup must pass</b>. The indicators are the same — the bar to qualify moves.<br><br>
 <b>Conservative — tap it and:</b><br>
 · Only <b>trend-following</b> setups allowed (Pullbacks &amp; Breakouts). Bounce/rejection setups are <b>switched off</b><br>
@@ -663,7 +848,7 @@ This app is educational and informational only — not financial advice. It neve
   <div id="tkEntryRow" style="display:none"><label for="tkEntry">Limit entry price</label><input type="text" id="tkEntry" inputmode="decimal"></div>
   <label for="tkAmount">Amount (base asset units)</label><input type="text" id="tkAmount" inputmode="decimal">
   <div class="row" style="align-items:center;gap:10px;margin-top:8px">
-   <input type="range" id="tkPctSlider" min="0" max="100" step="1" value="0" style="flex:1;accent-color:var(--accent,#3b82f6)">
+   <input type="range" id="tkPctSlider" min="0" max="100" step="1" value="0" style="flex:1;accent-color:var(--accent,#7ba0c4)">
    <div style="display:flex;align-items:center;gap:3px;background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:6px 8px;min-width:44px;justify-content:center">
     <input type="text" id="tkPctBox" inputmode="numeric" value="0" style="width:26px;background:transparent;border:none;color:var(--text);text-align:right;font:inherit;padding:0">
     <span class="sub">%</span>
@@ -719,7 +904,7 @@ This app is educational and informational only — not financial advice. It neve
 </div>
 <div id="detail">
  <div class="row" style="justify-content:space-between">
-  <div><b id="dTitle" style="font-size:16px"></b><div class="sub" id="dSub"></div></div>
+  <div><b id="dTitle" style="font-size:18.2px"></b><div class="sub" id="dSub"></div></div>
   <button class="ghost" onclick="closeDetail()">✕ Close</button>
  </div>
  <div class="row" id="dActions" style="margin-top:10px"></div>
@@ -731,9 +916,14 @@ This app is educational and informational only — not financial advice. It neve
  <div class="sub" id="tvNote" style="margin-top:4px"></div>
  <div class="checks" id="dChecks"></div>
 </div>
-<div id="newsbar"><div id="newstrack" class="wait"><span class="muted" style="font-size:12px;margin-left:14px">Loading market news…</span></div></div><script>
+<div id="newsbar"><div id="newstrack" class="wait"><span class="muted" style="font-size:13.7px;margin-left:14px">Loading market news…</span></div></div><script>
 /* ============ CONFIG ============ */
-var APP_VER='dx-test-11';(function(){try{if('serviceWorker' in navigator){navigator.serviceWorker.getRegistrations().then(function(rs){rs.forEach(function(r){try{r.update()}catch(e){}})}).catch(function(){});}var seen=null;try{seen=localStorage.getItem('petp_ver')}catch(e){}if(seen!==APP_VER){try{localStorage.setItem('petp_ver',APP_VER)}catch(e){}if(window.caches&&caches.keys){caches.keys().then(function(ks){ks.forEach(function(k){try{caches.delete(k)}catch(e){}})}).catch(function(){});}if('serviceWorker' in navigator){navigator.serviceWorker.getRegistrations().then(function(rs){var had=rs.length;rs.forEach(function(r){try{r.unregister()}catch(e){}});if(had){setTimeout(function(){try{location.reload()}catch(e){}},400);}}).catch(function(){});}}}catch(e){}})();
+/* Version scheme: the 420 major never changes — it is the app's identity, not
+   a number that counts up. The build number after it does. The badge beside
+   the logo renders this exact string, so what you see on screen IS the version
+   the cache-buster and the audit log are using; there is no second place to
+   keep in sync. */
+var APP_VER='420.15';(function(){try{if('serviceWorker' in navigator){navigator.serviceWorker.getRegistrations().then(function(rs){rs.forEach(function(r){try{r.update()}catch(e){}})}).catch(function(){});}var seen=null;try{seen=localStorage.getItem('petp_ver')}catch(e){}if(seen!==APP_VER){try{localStorage.setItem('petp_ver',APP_VER)}catch(e){}if(window.caches&&caches.keys){caches.keys().then(function(ks){ks.forEach(function(k){try{caches.delete(k)}catch(e){}})}).catch(function(){});}if('serviceWorker' in navigator){navigator.serviceWorker.getRegistrations().then(function(rs){var had=rs.length;rs.forEach(function(r){try{r.unregister()}catch(e){}});if(had){setTimeout(function(){try{location.reload()}catch(e){}},400);}}).catch(function(){});}}}catch(e){}})();
 let API='https://api.pacifica.fi/api/v1';
 function setNet(n){S.net=(n==='test')?'test':'main';API=S.net==='test'?'https://test-api.pacifica.fi/api/v1':'https://api.pacifica.fi/api/v1';AGENT=null;ARMED=false;}
 const MODES={
@@ -1093,18 +1283,24 @@ function notifyNewStrong(){
  if(fresh.length){
   const chip=document.getElementById('chipStrong');chip.classList.remove('flash');void chip.offsetWidth;chip.classList.add('flash');
   if(S.alerts){
-   beep();if(navigator.vibrate)navigator.vibrate([200,100,200]);
+   beep();if(navigator.vibrate)navigator.vibrate(35);
    if(typeof Notification!=='undefined'&&Notification.permission==='granted'){
     try{new Notification('PETP: '+fresh.length+' strong setup'+(fresh.length>1?'s':''),{body:fresh.slice(0,3).map(k=>k.split('|').slice(0,2).join(' ')).join(', ')})}catch(e){}}}}
  prevStrong=cur}
+/* A double 880 Hz blip at 0.25 gain is an alert tone — the frequency band and
+   the sharp 20 ms attack are what smoke alarms use. It reliably produces a
+   startle response, and a startled trader is a worse trader. Replaced with a
+   soft two-note fall (587 → 440 Hz, sine, slow attack, quarter the volume):
+   audible enough to notice, calm enough that noticing costs nothing. */
 function beep(){try{
  if(!audioCtx)audioCtx=new (window.AudioContext||window.webkitAudioContext)();
  if(audioCtx.state==='suspended')audioCtx.resume();
- for(const dt of[0,0.22]){const o=audioCtx.createOscillator(),gn=audioCtx.createGain();
-  o.frequency.value=880;o.type='sine';gn.gain.setValueAtTime(0.001,audioCtx.currentTime+dt);
-  gn.gain.exponentialRampToValueAtTime(0.25,audioCtx.currentTime+dt+0.02);
-  gn.gain.exponentialRampToValueAtTime(0.001,audioCtx.currentTime+dt+0.18);
-  o.connect(gn);gn.connect(audioCtx.destination);o.start(audioCtx.currentTime+dt);o.stop(audioCtx.currentTime+dt+0.2)}}catch(e){}}
+ const notes=[{f:587.33,dt:0},{f:440,dt:0.20}];
+ for(const n of notes){const o=audioCtx.createOscillator(),gn=audioCtx.createGain();
+  o.frequency.value=n.f;o.type='sine';gn.gain.setValueAtTime(0.0001,audioCtx.currentTime+n.dt);
+  gn.gain.exponentialRampToValueAtTime(0.06,audioCtx.currentTime+n.dt+0.09);
+  gn.gain.exponentialRampToValueAtTime(0.0001,audioCtx.currentTime+n.dt+0.42);
+  o.connect(gn);gn.connect(audioCtx.destination);o.start(audioCtx.currentTime+n.dt);o.stop(audioCtx.currentTime+n.dt+0.45)}}catch(e){}}
 
 /* ============ RENDER ============ */
 function fmt(x){if(x==null||isNaN(x))return'–';const a=Math.abs(x);
@@ -1138,8 +1334,8 @@ function render(){
  document.querySelectorAll('#sigTable th').forEach(t=>{t.classList.remove('sa','sd');if(t.dataset.k===sortK)t.classList.add(sortAsc?'sa':'sd')});
  document.getElementById('cStrong').textContent=results.filter(r=>r.score>=prof.threshold).length;
  document.getElementById('cWatch').textContent=results.filter(r=>r.score>=prof.threshold-15&&r.score<prof.threshold).length;
- const tot=agg.w+agg.l;
- document.getElementById('cReplay').textContent=tot?agg.w+'-'+agg.l+' ('+Math.round(100*agg.w/tot)+'%)':'–';
+ /* backtest W-L chip removed from the header — the same record is already in
+    the APEX scoreboard and the walk-forward validation panel. */
  const tb=document.getElementById('sigBody');
  if(!rows.length&&!_q){tb.innerHTML='<tr><td colspan="11" class="muted">'+(results.length?'No setups match filters (min '+minS+').':'No qualifying setups right now. Try Balanced/Aggressive or another timeframe.')+'</td></tr>';return}
  let html=rows.map(r=>{
@@ -1147,7 +1343,7 @@ function render(){
   const col=r.score>=prof.threshold?'var(--green)':'var(--amber)';
   const rep=r.replayN?(r.replayW+'-'+r.replayL):'–';
   return '<tr class="sig" onclick="showDetail('+results.indexOf(r)+')">'+
-   '<td><b>'+r.sym+'</b>'+flagsHtml(r.flags||{},r)+'</td><td style="font-size:11px">'+r.setup.replace('Squeeze ','')+(r.tf2?' <span class="pill strong" title="higher timeframe agrees">TF²</span>':'')+'<br><span class="sub">'+horizon(r.tf)+'</span></td>'+
+   '<td><b>'+r.sym+'</b>'+flagsHtml(r.flags||{},r)+'</td><td style="font-size:12.5px">'+r.setup.replace('Squeeze ','')+(r.tf2?' <span class="pill strong" title="higher timeframe agrees">TF²</span>':'')+'<br><span class="sub">'+horizon(r.tf)+'</span></td>'+
    '<td><span class="pill '+r.dir+'">'+(r.dir==='long'?'▲L':'▼S')+'</span></td>'+
    '<td><span class="scorebar"><i style="width:'+r.score+'%;background:'+col+'"></i></span><b>'+r.score+'</b> <span class="gradepill '+gradeCls(r.score)+'">'+gradeOf(r.score)+'</span></td>'+
    '<td class="mono">'+fmt((MK[r.sym]&&MK[r.sym].p)||r.price)+'</td><td class="mono">'+fmt(r.entry)+'</td><td class="mono" style="color:var(--red)">'+fmt(r.stop)+'</td>'+
@@ -1228,7 +1424,7 @@ async function loadBook(r){
 function loadTV(r){
  const wrap=document.getElementById('tvwrap');wrap.innerHTML='';
  const sym=r.sym;
- document.getElementById('tvNote').innerHTML='TradingView: '+tvSymbol(sym)+' (nearest listed market — levels above are Pacifica prices) · <button class="ghost" style="padding:2px 8px;font-size:12px" onclick="openFullChart(\''+symSafe(sym)+'\')">⛶ Full screen</button>';
+ document.getElementById('tvNote').innerHTML='TradingView: '+tvSymbol(sym)+' (nearest listed market — levels above are Pacifica prices) · <button class="ghost" style="padding:2px 8px;font-size:13.7px" onclick="openFullChart(\''+symSafe(sym)+'\')">⛶ Full screen</button>';
  wrap.appendChild(tvIframe(sym));}
 /* ============ PORTFOLIO / MARKET VIEW / EXTRAS ============ */
 let _q='',priceMap={},MK={},ALL=[],MINFO={},sentMode='overall',HEATALL=[],_hq='';
@@ -1315,8 +1511,11 @@ async function fetchDXY(){try{
 }catch(e){document.getElementById('dxyLine').textContent='DXY unavailable'}}
 function showDXY(c){
  const col=c.lbl==='STRONG'?'var(--red)':c.lbl==='WEAK'?'var(--green)':'var(--muted)';
- const note=c.lbl==='STRONG'?'USD rising — headwind for crypto':c.lbl==='WEAK'?'USD falling — tailwind for crypto':'USD sideways';
- document.getElementById('dxyLine').innerHTML='DXY <b>'+c.val.toFixed(2)+'</b> <b style="color:'+col+'">'+c.lbl+'</b> <span class="sub">('+(c.chg>=0?'+':'')+c.chg.toFixed(2)+'% 7d · '+note+')</span>'}
+ const note=c.lbl==='STRONG'?'USD rising — BTC tends to range or drift down here':c.lbl==='WEAK'?'USD falling — historically a BTC tailwind':'USD sideways';
+ /* Carries its own point cost, since it is no longer restated as a bullet in
+    the reasons list above. */
+ const cost=c.lbl==='STRONG'?' <b style="color:var(--red)">−5</b>':'';
+ document.getElementById('dxyLine').innerHTML='💵 Dollar <b>'+c.val.toFixed(2)+'</b> <b style="color:'+col+'">'+c.lbl+'</b> <span class="sub">'+(c.chg>=0?'+':'')+c.chg.toFixed(2)+'% 7d · '+note+'</span>'+cost}
 function addTrade(r){
  if(S.checklist&&!confirm('PRE-TRADE CHECKLIST for '+r.sym+' '+r.dir.toUpperCase()+':\n\n1. Trend & BTC regime aligned?\n2. No big USD news within 36h?\n3. Size matches your risk % rule?\n4. Stop will be set ON the exchange?\n5. Net R:R still worth it after fees?\n\nOK = all five checked. Cancel = walk away.'))return;
  let uLev=prompt('Leverage you are using on Pacifica (x):',(r.lev||2).toFixed(1));
@@ -1339,8 +1538,8 @@ function renderTrades(){const el=document.getElementById('openTrades');if(!el)re
  var cl=TR.open.filter(function(t){return isCrypto(t.sym)&&t.dir==='long'}).length;
  var cs=TR.open.filter(function(t){return isCrypto(t.sym)&&t.dir==='short'}).length;
  var corr='';
- if(cl>=3)corr='<div style="color:var(--amber);font-size:12px;margin-bottom:6px">\u26a0 '+cl+' correlated crypto longs open — that is basically one big Bitcoin bet. Size accordingly.</div>';
- else if(cs>=3)corr='<div style="color:var(--amber);font-size:12px;margin-bottom:6px">\u26a0 '+cs+' correlated crypto shorts open — one big Bitcoin bet in disguise.</div>';
+ if(cl>=3)corr='<div style="color:var(--amber);font-size:13.7px;margin-bottom:6px">\u26a0 '+cl+' correlated crypto longs open — that is basically one big Bitcoin bet. Size accordingly.</div>';
+ else if(cs>=3)corr='<div style="color:var(--amber);font-size:13.7px;margin-bottom:6px">\u26a0 '+cs+' correlated crypto shorts open — one big Bitcoin bet in disguise.</div>';
  if(!orphans.length){el.innerHTML=corr+'<span class="sub">Nothing here. Any order you place is tracked automatically and appears in <b>Your positions</b> above with its stop, target and live P/L.</span>';return}
  el.innerHTML=corr+'<div class="sub" style="margin-bottom:6px">Tracked plans with <b>no matching position on the exchange</b> — paper trades, or trades closed elsewhere.</div>'
   +orphans.map(function(t){
@@ -1350,7 +1549,7 @@ function renderTrades(){const el=document.getElementById('openTrades');if(!el)re
    +'<br><span class="sub">'+t.setup+' · in '+fmt(base)+' · stop '+fmt(t.stop)+' · target '+fmt(t.target)+'</span>'
    +(cur?posCoach(t,cur):'')+'</div>'
    +'<div style="text-align:right">'+(cur?'<span class="sub">now</span> <b class="mono">'+fmt(cur)+'</b>':'<span class="sub">scan for price</span>')
-   +'<br><button class="ghost" style="padding:3px 9px;font-size:11px" onclick="closeTradeDispatch('+t.id+')">\u2715 Close / remove</button></div></div>'}).join('')}
+   +'<br><button class="ghost" style="padding:3px 9px;font-size:12.5px" onclick="closeTradeDispatch('+t.id+')">\u2715 Close / remove</button></div></div>'}).join('')}
 function invalidationCheck(){
  let fired=[];
  for(const t of TR.open){const k=MK[t.sym];if(!k||!k.tr)continue;
@@ -1358,7 +1557,7 @@ function invalidationCheck(){
   if(bad&&!t.inv){t.inv=1;fired.push(t.sym)}
   else if(!bad&&t.inv)delete t.inv}
  if(fired.length){saveTR();
-  beep();if(navigator.vibrate)navigator.vibrate([200,100,200,100,200]);
+  beep();if(navigator.vibrate)navigator.vibrate(35);
   if(typeof Notification!=='undefined'&&Notification.permission==='granted'){try{new Notification('PETP: setup died',{body:fired.join(', ')+' — trend flipped against your open trade'})}catch(e){}}
   setStatus('⚠ setup died: '+fired.join(', '),'var(--red)')}}
 function todayPnl(){try{const o=JSON.parse(localStorage.getItem('petpapp_day')||'null');
@@ -1454,7 +1653,7 @@ function clearSignals(){
  try{localStorage.setItem('petpapp_settings',JSON.stringify(S))}catch(e){}
  try{localStorage.removeItem('petpapp_last')}catch(e){}
  document.getElementById('cStrong').textContent='–';document.getElementById('cWatch').textContent='–';
- document.getElementById('cReplay').textContent='–';document.getElementById('cScanned').textContent='–';
+ document.getElementById('cScanned').textContent='–';
  document.getElementById('cTime').textContent='–';
  document.getElementById('prog').style.display='none';
  document.getElementById('scanBtn').textContent='Scan';
@@ -1501,7 +1700,7 @@ function newsRender(items){
  tr.innerHTML='<span style="display:inline-flex;align-items:center">'+seq+'</span><span style="display:inline-flex;align-items:center">'+seq+'</span>';
  tr.style.animationDuration=Math.max(60,items.length*8)+'s'}
 async function fetchNews(){
- if(typeof S!=='undefined'&&S.news===false){var _nt=document.getElementById('newstrack');if(_nt)_nt.innerHTML='<span class="muted" style="font-size:12px;margin-left:14px">Market news off (third-party proxy disabled in Settings).</span>';return}
+ if(typeof S!=='undefined'&&S.news===false){var _nt=document.getElementById('newstrack');if(_nt)_nt.innerHTML='<span class="muted" style="font-size:13.7px;margin-left:14px">Market news off (third-party proxy disabled in Settings).</span>';return}
  try{
   const c=JSON.parse(localStorage.getItem('petpapp_news')||'null');
   if(c&&Date.now()-c.ts<1800000&&c.items&&c.items.length){newsRender(c.items)}
@@ -1521,7 +1720,7 @@ async function fetchNews(){
    for(const a of bySrc)if(a[i]){items.push(a[i]);more=true}}
   try{localStorage.setItem('petpapp_news',JSON.stringify({ts:Date.now(),items}))}catch(e){}
   newsRender(items);
- }catch(e){document.getElementById('newstrack').innerHTML='<span class="muted" style="font-size:12px;margin-left:14px">News unavailable right now — will retry.</span>'}}
+ }catch(e){document.getElementById('newstrack').innerHTML='<span class="muted" style="font-size:13.7px;margin-left:14px">News unavailable right now — will retry.</span>'}}
 /* ---- pro-trader helpers ---- */
 const NONCRYPTO=new Set(['NVDA','TSLA','GOOGL','PLTR','HOOD','MSTR','CRCL','SPCX','SKHYNIX','SAMSUNG','BP','URNM','SP500','XAU','XAG','PLATINUM','COPPER','CL','NATGAS','EURUSD','USDJPY','PAXG']);
 function isCrypto(sym){return !NONCRYPTO.has(sym)}
@@ -1563,24 +1762,100 @@ async function enrichTF2(){
   }catch(e){}}
  render()}
 
-/* ---- economic calendar (official 2026 FOMC + BLS CPI dates; jobs report = 1st Friday) ---- */
-const ECON=['2026-01-28','2026-03-18','2026-04-29','2026-06-17','2026-07-29','2026-09-16','2026-10-28','2026-12-09','2027-01-27','2027-03-17','2027-04-28','2027-06-16','2027-07-28','2027-09-22','2027-11-03','2027-12-15'].map(d=>({d,label:'FOMC rate decision'}))
- .concat(['2026-01-13','2026-02-13','2026-03-11','2026-04-10','2026-05-12','2026-06-10','2026-07-14','2026-08-12','2026-09-11','2026-10-14','2026-11-10','2026-12-10','2027-01-13','2027-02-10','2027-03-10','2027-04-13','2027-05-12','2027-06-10','2027-07-13','2027-08-11','2027-09-14','2027-10-13','2027-11-10','2027-12-10'].map(d=>({d,label:'CPI inflation report'})));
-function nfpDates(){const out=[],now=new Date();
- for(let k=0;k<3;k++){const y=now.getUTCFullYear(),mo=now.getUTCMonth()+k;
-  const first=new Date(Date.UTC(y,mo,1));const day=first.getUTCDay();
-  const fri=new Date(Date.UTC(y,mo,1+((5-day+7)%7)));
-  out.push({d:fri.toISOString().slice(0,10),label:'US jobs report'})}
+/* ============================================================================
+   ECONOMIC / EVENT CALENDAR
+   Previously this knew three events: FOMC, CPI and the jobs report. Those are
+   the three biggest, but plenty of other scheduled releases move crypto hard
+   enough to invalidate a technical setup, and the app was blind to all of them.
+
+   Two rules govern what is listed here:
+
+   1. SCHEDULED ONLY. Everything below is a date known in advance. Unscheduled
+      news — an exchange failure, an ETF headline, a large liquidation — cannot
+      be calendared, and the scrolling headline bar at the bottom of the screen
+      is what covers that. Do not confuse the two.
+
+   2. EXACT vs DERIVED is labelled honestly. Official published dates are hard-
+      coded. The rest are derived from firm, documented conventions:
+        · FOMC minutes  — exactly 3 weeks after each meeting (Fed practice)
+        · Jobs report   — first Friday of the month (BLS practice)
+        · Options expiry— last Friday of the month, 08:00 UTC (Deribit/CME)
+      A few releases have no fixed rule — PCE, PPI and retail sales drift by a
+      few days month to month. Those are marked approximate ('~') rather than
+      presented as certainty, because a confidently wrong date is worse than an
+      openly fuzzy one.
+
+   `hi:true` marks the events big enough to justify sizing down. Only those
+   penalise market health — otherwise adding more events to this list would
+   make the app permanently pessimistic, which is the opposite of useful.
+   ============================================================================ */
+const FOMC_DATES=['2026-01-28','2026-03-18','2026-04-29','2026-06-17','2026-07-29','2026-09-16','2026-10-28','2026-12-09','2027-01-27','2027-03-17','2027-04-28','2027-06-16','2027-07-28','2027-09-22','2027-11-03','2027-12-15'];
+const CPI_DATES=['2026-01-13','2026-02-13','2026-03-11','2026-04-10','2026-05-12','2026-06-10','2026-07-14','2026-08-12','2026-09-11','2026-10-14','2026-11-10','2026-12-10','2027-01-13','2027-02-10','2027-03-10','2027-04-13','2027-05-12','2027-06-10','2027-07-13','2027-08-11','2027-09-14','2027-10-13','2027-11-10','2027-12-10'];
+function addDays(iso,n){const t=Date.parse(iso+'T00:00:00Z')+n*86400000;return new Date(t).toISOString().slice(0,10)}
+/* nth weekday of a month: wd 0=Sun..6=Sat, n=1 for first, n=-1 for last */
+function nthWeekday(y,mo,wd,n){
+ if(n>0){const first=new Date(Date.UTC(y,mo,1));
+  return new Date(Date.UTC(y,mo,1+((wd-first.getUTCDay()+7)%7)+(n-1)*7)).toISOString().slice(0,10)}
+ const last=new Date(Date.UTC(y,mo+1,0));
+ return new Date(Date.UTC(y,mo+1,0-((last.getUTCDay()-wd+7)%7))).toISOString().slice(0,10)}
+const ECON=FOMC_DATES.map(d=>({d,label:'FOMC rate decision',hi:true,why:'The single biggest scheduled mover. Rate path repricing hits every risk asset at once.'}))
+ .concat(CPI_DATES.map(d=>({d,label:'CPI inflation report',hi:true,why:'Drives rate expectations. Crypto routinely moves several percent in the first minutes.'})))
+ /* Minutes: exactly three weeks after the meeting they describe. */
+ .concat(FOMC_DATES.map(d=>({d:addDays(d,21),label:'FOMC minutes',hi:false,why:'Detail behind the last decision. Smaller than the meeting itself, but can still move rates.'})));
+/* Rolling, rule-derived events for the months around today. */
+function econDerived(){
+ const out=[],now=new Date();
+ for(let k=-1;k<=3;k++){
+  const y=now.getUTCFullYear(),mo=now.getUTCMonth()+k;
+  const yy=new Date(Date.UTC(y,mo,1)).getUTCFullYear(),mm=new Date(Date.UTC(y,mo,1)).getUTCMonth();
+  out.push({d:nthWeekday(yy,mm,5,1),label:'US jobs report',hi:true,
+   why:'Employment data feeds straight into rate expectations.'});
+  const lastFri=nthWeekday(yy,mm,5,-1),q=(mm===2||mm===5||mm===8||mm===11);
+  out.push({d:lastFri,label:q?'Quarterly options expiry':'Monthly options expiry',hi:q,
+   why:q?'The big one — quarterly contracts expire and dealers rebalance. Price often pins to a level then moves once it clears.'
+        :'Monthly contracts expire at 08:00 UTC. Usually a smaller version of the quarterly effect.'});
+  /* No fixed rule for these three — shown as approximate on purpose. */
+  out.push({d:addDays(nthWeekday(yy,mm,5,-1),-2),label:'~ PCE inflation',hi:false,approx:true,
+   why:'The gauge the Fed actually targets. Date drifts a few days month to month.'});
+  const cpiThis=CPI_DATES.filter(d=>d.slice(0,7)===new Date(Date.UTC(yy,mm,1)).toISOString().slice(0,7))[0];
+  if(cpiThis)out.push({d:addDays(cpiThis,1),label:'~ PPI producer prices',hi:false,approx:true,
+   why:'Wholesale inflation, usually released the day after CPI.'});
+  out.push({d:nthWeekday(yy,mm,2,3),label:'~ US retail sales',hi:false,approx:true,
+   why:'Consumer demand read. Moves the dollar more than it moves crypto directly.'});
+  if(mm===7)out.push({d:nthWeekday(yy,mm,5,-1),label:'Jackson Hole symposium',hi:true,approx:true,
+   why:'Central bankers meet; policy signals from here have started multi-week trends.'});
+ }
  return out}
+function econAll(){try{return ECON.concat(econDerived())}catch(e){return ECON}}
+/* Events that are big enough to warrant sizing down. Used by market health. */
+function econHighImpact(){return econAll().filter(function(e){return e.hi})}
 function econCheck(){
  const el=document.getElementById('econWarn');if(!el)return;
- const evs=ECON.concat(nfpDates());const now=Date.now();let hit=null;
- for(const e of evs){const t=Date.parse(e.d+'T13:00:00Z');const dh=(t-now)/3600000;
-  if(dh>-12&&dh<40&&(hit===null||t<hit.t))hit={t,label:e.label}}
- if(hit){const today=new Date(hit.t).toDateString()===new Date().toDateString();
-  el.style.display='block';
-  el.innerHTML='⚠ <b>'+hit.label+'</b> '+(today?'today':'on '+new Date(hit.t).toLocaleDateString(undefined,{weekday:'long'}))+' — big USD events often invalidate technical setups. Trade smaller or wait it out.'}
- else el.style.display='none'}
+ const now=Date.now();
+ const up=econAll().map(function(e){
+   return{t:Date.parse(e.d+'T13:00:00Z'),label:e.label,hi:e.hi,why:e.why,approx:e.approx}})
+  .filter(function(e){const dh=(e.t-now)/3600000;return dh>-12&&dh<=(24*8)})
+  .sort(function(a,b){return a.t-b.t});
+ if(!up.length){el.style.display='none';el.innerHTML='';return}
+ function when(t){
+  const d=new Date(t),today=new Date();
+  if(d.toDateString()===today.toDateString())return 'today';
+  const tm=new Date(today.getTime()+86400000);
+  if(d.toDateString()===tm.toDateString())return 'tomorrow';
+  const days=Math.round((t-now)/86400000);
+  return (days<=6?d.toLocaleDateString(undefined,{weekday:'long'}):d.toLocaleDateString(undefined,{month:'short',day:'numeric'}));}
+ const lead=up[0],rest=up.slice(1,4);
+ /* Only a high-impact event within ~40h gets the amber treatment; everything
+    else is shown as neutral information so the box does not cry wolf. */
+ const urgent=lead.hi&&((lead.t-now)/3600000)<40;
+ el.style.display='block';
+ el.className=urgent?'econ hot':'econ';
+ el.innerHTML=(urgent?'⚠ ':'📅 ')+'<b>'+lead.label+'</b> '+when(lead.t)
+  +'<div class="sub" style="margin-top:2px">'+lead.why
+  +(lead.approx?' <i>Approximate date — confirm before relying on it.</i>':'')
+  +(urgent?' Big scheduled events routinely invalidate technical setups; trade smaller or wait it out.':'')+'</div>'
+  +(rest.length?'<div class="sub" style="margin-top:5px;opacity:.8">Also ahead: '
+    +rest.map(function(e){return e.label+' '+when(e.t)}).join(' · ')+'</div>':'');}
 
 /* ---- signal scoreboard ---- */
 let SB={open:[],closed:[]};
@@ -1655,7 +1930,7 @@ function delAlert(id){AL=AL.filter(a=>a.id!==id);alSave();renderAlerts()}
 function renderAlerts(){
  const el=document.getElementById('alBox');if(!el)return;
  if(!AL.length){el.innerHTML='<span class="sub">No alerts. Open any asset and tap "🔔 Alert" to set a price level.</span>';return}
- el.innerHTML=AL.map(a=>'<div class="trow"><div><b>'+a.sym+'</b> '+(a.dirn==='above'?'≥':'≤')+' <span class="mono">'+fmt(a.level)+'</span>'+((MK[a.sym]&&MK[a.sym].p)?' <span class="sub">(now '+fmt(MK[a.sym].p)+')</span>':'')+'</div><button class="ghost" style="padding:3px 9px;font-size:11px" onclick="delAlert('+a.id+')">✕</button></div>').join('')}
+ el.innerHTML=AL.map(a=>'<div class="trow"><div><b>'+a.sym+'</b> '+(a.dirn==='above'?'≥':'≤')+' <span class="mono">'+fmt(a.level)+'</span>'+((MK[a.sym]&&MK[a.sym].p)?' <span class="sub">(now '+fmt(MK[a.sym].p)+')</span>':'')+'</div><button class="ghost" style="padding:3px 9px;font-size:12.5px" onclick="delAlert('+a.id+')">✕</button></div>').join('')}
 function alertsCheck(){
  const fired=[];
  AL=AL.filter(a=>{const p=(MK[a.sym]&&MK[a.sym].p)||priceMap[a.sym];
@@ -1663,7 +1938,7 @@ function alertsCheck(){
   const hit=a.dirn==='above'?p>=a.level:p<=a.level;
   if(hit)fired.push(a);return !hit});
  if(fired.length){alSave();renderAlerts();
-  beep();if(navigator.vibrate)navigator.vibrate([300,120,300]);
+  beep();if(navigator.vibrate)navigator.vibrate(35);
   const msg=fired.map(a=>a.sym+' crossed '+fmt(a.level)).join(', ');
   if(typeof Notification!=='undefined'&&Notification.permission==='granted'){try{new Notification('PETP price alert',{body:msg})}catch(e){}}
   setStatus('🔔 '+msg,'var(--amber)')}}
@@ -1689,7 +1964,6 @@ function postScan(all,aggT){
  renderVerdict();renderRisk();renderJournal();evictMK();renderLiveAccount();try{apexRegime();apexLogSetups();apexResolve();renderApex();apexdbPushMarket();apexActiveResolve();apexAutoRead();renderCycle()}catch(e){}
  const reg=btcRegime();
  document.getElementById('btcReg').innerHTML='₿ regime: '+(reg==='long'?'<span class="up">▲ up — longs favored</span>':reg==='short'?'<span class="dn">▼ down — careful with longs</span>':'<span class="muted">neutral</span>');
- document.getElementById('sessLbl').textContent='Session: '+sessionInfo().l;
  enrichTF2();
  pushHist(results.filter(r=>r.score>=PROFILES[S.profile].threshold).length,all.length);
  const rrs=results.map(r=>r.rr);
@@ -1726,23 +2000,21 @@ function tradeVerdict(){
   /* pre-scan: no engine data yet */
   return{call:'—',score:null,reasons:reasons.length?reasons:['Run a scan to read conditions.'],stand:stand}}
 
- /* explain the engine's own components in plain words */
- var bd={};(DX.health.breakdown||[]).forEach(function(b){bd[b.label]=b.val});
- var rp=DX.regimeProb||{trend:33,range:34,volatile:33};
- var rd=(typeof dxRegimeRead==='function')?dxRegimeRead(rp):null;
- if(rd)reasons.push((rp.volatile>=35?'⚠ ':'✅ ')+rd.headline+'.');
- if(bd['Liquidity']!=null)reasons.push((bd['Liquidity']>=70?'✅':'⚠')+' Liquidity '+bd['Liquidity']+'/100 — '+(bd['Liquidity']>=70?'plenty of markets are tradeable.':'thin books; expect worse fills.'));
- if(bd['Breadth']!=null)reasons.push((bd['Breadth']>=60?'✅':'·')+' Setup breadth '+bd['Breadth']+'/100 — '+(bd['Breadth']>=60?'the scanner is finding plenty to look at.':'few qualifying setups on the board.'));
- if(bd['Funding calm']!=null&&bd['Funding calm']<60)reasons.push('🔥 Funding is stretched — one side of the market is crowded and paying to stay there.');
- if(bd['Macro clear']!=null&&bd['Macro clear']<70)reasons.push('📅 A major economic event is close — these routinely invalidate technical setups.');
+ /* This list covers ONLY what the health score does not already measure.
+    The regime read, the six health components and the volatility label each
+    have exactly one home in the UI (the meters, the breakdown grid and the
+    regime read respectively) — repeating them here is what made this box say
+    things like "leaning trending" twice. */
 
  /* factors the health score does not cover */
  var sess=sessionInfo();
  if(sess.hot)reasons.push('✅ '+sess.l+'.');
  else{reasons.push('🌙 '+sess.l+' — thinner liquidity, more false breaks.');adj-=8}
+ /* Dollar strength still moves the score, but it is NOT repeated as a bullet
+    here — the macro line directly under this list shows the DXY reading and
+    its point cost. One fact, one place. */
  var dxy=dxyCache();
- if(dxy&&dxy.lbl==='STRONG'){reasons.push('💵 US dollar strong — a headwind for crypto longs.');adj-=5}
- else if(dxy&&dxy.lbl==='WEAK')reasons.push('💵 US dollar weak — a tailwind for crypto.');
+ if(dxy&&dxy.lbl==='STRONG')adj-=5;
 
  var th=PROFILES[S.profile].threshold,strong=results.filter(function(x){return x.score>=th}).length;
  if(strong)reasons.push('✅ '+strong+' strong setup'+(strong>1?'s':'')+' on the board.');
@@ -1758,12 +2030,23 @@ function renderVerdict(){
  if(!results.length&&!MK.BTC)return;
  const v=tradeVerdict();
  el.className='verdict '+(v.call==='GO'?'go':v.call==='CAUTION'?'caution':v.call==='—'?'':'stand');
+ /* Display-only relabel. v.call keeps its original values everywhere else. */
  const icon=v.call==='GO'?'🟢':v.call==='CAUTION'?'🟡':v.call==='—'?'⚪':'🔴';
- var vol=(typeof DX!=='undefined'&&DX.volRegime)?DX.volRegime.toLowerCase():'–';
- document.getElementById('vCall').innerHTML=icon+' '+v.call+
-  '<span class="vscore">'+(v.score!=null?('conditions '+v.score+'/100 · swings '+vol):'awaiting first scan')+'</span>';
- document.getElementById('vBody').innerHTML='<ul>'+v.reasons.map(function(x){return '<li>'+x+'</li>'}).join('')+'</ul>'
-  +'<div class="sub" style="margin-top:6px">A read on <b>conditions</b>, not a prediction. GO does not mean "take every trade"; STAND DOWN means protect capital.</div>'}
+ const LABEL={'GO':'Good to trade','CAUTION':'Trade carefully','STAND DOWN':'Sit this one out','—':'Ready when you are'};
+ const shown=LABEL[v.call]||v.call;
+ /* Volatility is NOT repeated here — it has one home, in the regime read-out
+    below the meters. The headline carries only the final number. */
+ document.getElementById('vCall').innerHTML=icon+' '+shown+
+  '<span class="vscore">'+(v.score!=null?('conditions '+v.score+'/100'):'awaiting first scan')+'</span>';
+ /* No "market health NN" line here: that number has one home, the big figure
+    lower in this same box. The caption beside it explains the relationship, so
+    neither number needs restating. */
+ document.getElementById('vBody').innerHTML='<ul>'+v.reasons.map(function(x){return '<li>'+x+'</li>'}).join('')+'</ul>';
+ /* Annotate the raw-health figure with the net adjustment instead. */
+ var capEl=document.getElementById('dxHealthCap');
+ if(capEl)capEl.textContent=(v.adj&&v.score!=null&&!v.stand)
+  ?('raw score · verdict above applies '+(v.adj<0?'−':'+')+Math.abs(v.adj))
+  :'raw score'}
 
 /* ---- Confidence grade + calibrated probability ---- */
 function gradeOf(s){return s>=80?'A+':s>=72?'A':s>=64?'B':s>=56?'C':'D'}
@@ -1832,7 +2115,7 @@ function renderJournal(){
  if(s.withR.length>=3){const buckets=[0,0,0,0,0,0];
   for(const x of s.withR){const R=x.R;const b=R<-2?0:R<-1?1:R<0?2:R<1?3:R<2?4:5;buckets[b]++}
   const mxB=Math.max(...buckets)||1;const cols=['var(--red)','var(--red)','var(--amber)','var(--green)','var(--green)','var(--green)'];
-  html+='<div class="sub" style="margin-top:8px">R-multiple distribution</div><div class="rbar">'+buckets.map((n,i)=>'<i title="'+n+' trades" style="height:'+(n/mxB*100)+'%;background:'+cols[i]+'"></i>').join('')+'</div><div class="sub" style="font-size:9px;display:flex;justify-content:space-between"><span>&lt;-2R</span><span>0</span><span>&gt;2R</span></div>'}
+  html+='<div class="sub" style="margin-top:8px">R-multiple distribution</div><div class="rbar">'+buckets.map((n,i)=>'<i title="'+n+' trades" style="height:'+(n/mxB*100)+'%;background:'+cols[i]+'"></i>').join('')+'</div><div class="sub" style="font-size:10.3px;display:flex;justify-content:space-between"><span>&lt;-2R</span><span>0</span><span>&gt;2R</span></div>'}
  const bySet={};for(const x of JR){const k=x.setup||'?';bySet[k]=bySet[k]||{n:0,r:0,hasR:0};bySet[k].n++;if(x.R!=null&&isFinite(x.R)){bySet[k].r+=x.R;bySet[k].hasR++}}
  const setArr=Object.keys(bySet).map(k=>({k,avg:bySet[k].hasR?bySet[k].r/bySet[k].hasR:0,n:bySet[k].n})).filter(x=>x.n>=2).sort((a,b)=>b.avg-a.avg);
  var _emo={};for(var _ei=0;_ei<JR.length;_ei++){var _ek=JR[_ei].emotion||'?';_emo[_ek]=_emo[_ek]||{w:0,l:0};_emo[_ek][(JR[_ei].pnl>0)?'w':'l']++;}var _ekl=Object.keys(_emo).filter(function(k){return _emo[k].w+_emo[k].l>=2;});if(_ekl.length)html+='<div class="sub" style="margin-top:8px">Win% by feeling: '+_ekl.map(function(k){var a=_emo[k],m=a.w+a.l;return k+' '+Math.round(100*a.w/m)+'%';}).join(' · ')+'</div>';html+='<div class="sub" style="margin-top:4px">Avg win +$'+fmt(s.avgW)+' · avg loss -$'+fmt(s.avgL)+(s.expectancyR!=null?(s.expectancyR>0?' · 💡 positive expectancy (+'+s.expectancyR.toFixed(2)+'R/trade) — your process works, keep size steady.':' · ⚠ negative expectancy — take only A/A+ grades and cut losers faster.'):'')+'</div>';if(setArr.length>=1)html+='<div class="sub" style="margin-top:8px">Best setup: <b>'+setArr[0].k+'</b> ('+(setArr[0].avg>=0?'+':'')+setArr[0].avg.toFixed(2)+'R avg)'+(setArr.length>1?' · Worst: <b>'+setArr[setArr.length-1].k+'</b> ('+(setArr[setArr.length-1].avg>=0?'+':'')+setArr[setArr.length-1].avg.toFixed(2)+'R)':'')+'</div>';
@@ -1847,7 +2130,7 @@ function journalListHtml(){
  var shown=rows.slice(0,300);
  function esc(t){return String(t==null?'':t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
  var h='<details class="cdrop" id="jListDrop" style="margin-top:10px" ontoggle="secRemember(this)">'
-  +'<summary><b style="font-size:13px">📜 All closed trades</b> <span class="sub">— '+rows.length+' logged, newest first</span></summary>'
+  +'<summary><b style="font-size:14.8px">📜 All closed trades</b> <span class="sub">— '+rows.length+' logged, newest first</span></summary>'
   +'<div class="jlist" style="margin-top:6px">';
  h+=shown.map(function(x){
   var win=(x.R!=null&&isFinite(x.R))?(x.R>0):(x.pnl>0);
@@ -1946,9 +2229,9 @@ function posCoach(t,cur){
  if(t.uLev>1){
   var liq=long?base*(1-1/t.uLev+0.005):base*(1+1/t.uLev-0.005);
   var bad=long?t.stop<=liq:t.stop>=liq;
-  if(bad)out+='<div style="color:var(--red);font-weight:700;font-size:11.5px">⚠ Your stop sits beyond the liquidation price — you would be liquidated before it triggers.</div>'}
+  if(bad)out+='<div style="color:var(--red);font-weight:700;font-size:13.1px">⚠ Your stop sits beyond the liquidation price — you would be liquidated before it triggers.</div>'}
  if(prog>=1){
-  out+='<div style="color:var(--green);font-size:11.5px">✅ Up +'+prog.toFixed(1)+'R — consider moving your stop to entry so the trade cannot lose.</div>';
+  out+='<div style="color:var(--green);font-size:13.1px">✅ Up +'+prog.toFixed(1)+'R — consider moving your stop to entry so the trade cannot lose.</div>';
   if(k.atrPct!=null){var trail=long?cur*(1-k.atrPct*1.2/100):cur*(1+k.atrPct*1.2/100);
    out+='<div class="sub">a trailing stop around '+fmt(trail)+' would lock in most of it</div>'}}
  else if(prog<=-0.5&&prog>-1)out+='<div class="sub" style="color:var(--amber)">Down '+Math.abs(prog).toFixed(1)+'R — do not widen the stop. That is the one move that turns a normal loss into a bad one.</div>';
@@ -1956,10 +2239,10 @@ function posCoach(t,cur){
   var atrAbs=base*k.atrPct/100;
   var etaH=atrAbs>0?Math.abs(t.target-base)/atrAbs*tfSecOf(t.tf||'15m')/3600:0;
   var ageH=(Date.now()-t.ts)/3600000;
-  if(etaH>0&&ageH>2*etaH&&prog<0.5)out+='<div style="color:var(--amber);font-size:11.5px">🐌 Stalling — well past the time this normally takes, with little progress. Trades that go nowhere usually end badly.</div>'}
+  if(etaH>0&&ageH>2*etaH&&prog<0.5)out+='<div style="color:var(--amber);font-size:13.1px">🐌 Stalling — well past the time this normally takes, with little progress. Trades that go nowhere usually end badly.</div>'}
  if(k.fund!=null&&t.qty){var perDay=cur*t.qty*k.fund/100/365*(long?-1:1);
   if(Math.abs(perDay)>=0.01)out+='<div class="sub">funding '+(perDay>=0?'earning +':'costing ')+Math.abs(perDay).toFixed(2)+' $/day</div>'}
- if(t.inv)out+='<div style="color:var(--red);font-weight:700;font-size:11.5px">⚠ Setup invalidated — the trend has flipped against this trade.</div>';
+ if(t.inv)out+='<div style="color:var(--red);font-weight:700;font-size:13.1px">⚠ Setup invalidated — the trend has flipped against this trade.</div>';
  return out}
 /* find the tracked plan (setup name, stop, target) matching a live position */
 function planFor(sym,long){
@@ -2001,8 +2284,8 @@ async function renderLiveAccount(){
    +'<div><b>'+r.sym+'</b> <span class="pill '+(r.long?'long':'short')+'">'+(r.long?'LONG':'SHORT')+'</span> <span class="sub">'+fmt(r.amt)+' @ '+fmt(r.entry)+(r.liq?' · liq '+fmt(+r.liq):'')+'</span>'+plan+'</div>'
    +'<div style="text-align:right"><b class="mono '+(r.upnl>=0?'pnl-p':'pnl-n')+'">'+(r.upnl>=0?'+':'')+fmt(r.upnl)+'$</b><br><span class="sub">now '+fmt(r.mk)+'</span></div></div>'
    +(coach?'<div style="margin-top:5px">'+coach+'</div>':'')
-   +(hasAgentKey()?'<div class="row" style="gap:6px;margin-top:6px"><button class="ghost" style="padding:3px 9px;font-size:11px" onclick="openTpslModal(\''+symSafe(r.sym)+'\',\''+(r.long?'long':'short')+'\','+r.entry+','+r.mk+')">🎯 Stop / target</button><button class="ghost" style="padding:3px 9px;font-size:11px" onclick="closeLivePosition(\''+symSafe(r.sym)+'\',\''+(r.long?'long':'short')+'\','+r.amt+')">✕ Close position</button>'
-     +(t?'<button class="ghost" style="padding:3px 9px;font-size:11px" onclick="closeTradeDispatch('+t.id+')">📓 Close &amp; journal</button>':'')+'</div>':'')
+   +(hasAgentKey()?'<div class="row" style="gap:6px;margin-top:6px"><button class="ghost" style="padding:3px 9px;font-size:12.5px" onclick="openTpslModal(\''+symSafe(r.sym)+'\',\''+(r.long?'long':'short')+'\','+r.entry+','+r.mk+')">🎯 Stop / target</button><button class="ghost" style="padding:3px 9px;font-size:12.5px" onclick="closeLivePosition(\''+symSafe(r.sym)+'\',\''+(r.long?'long':'short')+'\','+r.amt+')">✕ Close position</button>'
+     +(t?'<button class="ghost" style="padding:3px 9px;font-size:12.5px" onclick="closeTradeDispatch('+t.id+')">📓 Close &amp; journal</button>':'')+'</div>':'')
    +'</div>'}).join('')+'</div>';}
   else html+='<div class="sub" style="margin-top:8px">No open positions right now.</div>';
   html+='<div class="sub" style="margin-top:6px">Live from Pacifica · updates each scan · unrealized P/L marked against scanner prices.</div>';
@@ -2518,7 +2801,14 @@ function tkClampLev(maxLev,sym){
 }
 
 /* ===== scoreboard setup-learning + doobie FX ===== */
-function boomDoobie(){try{if(!document||!document.body)return;document.body.classList.add('boom');setTimeout(function(){try{document.body.classList.remove('boom');}catch(e){}},850);}catch(e){}}
+/* Was: an 0.85 s explosion — the logo scaled 175%, flashed to 3x brightness and
+   imploded — fired on every error, including harmless network hiccups and any
+   unhandled promise rejection. A violent full-screen animation is the single
+   most stress-inducing thing an app can do, and here it was tied to events the
+   user cannot control and usually does not need to act on. The error text still
+   appears; the detonation does not. Kept as a no-op so all ~6 call sites and
+   the .boom CSS stay valid. */
+function boomDoobie(){}
 function setDoob(on){try{var sm=document.querySelectorAll('.smoke,.smkp');for(var i=0;i<sm.length;i++){sm[i].style.animationPlayState=on?'running':'paused';sm[i].style.opacity=on?'':'0';}var em=document.querySelectorAll('.ember');for(var j=0;j<em.length;j++){em[j].style.animationPlayState=on?'running':'paused';em[j].style.opacity=on?'1':'0';}}catch(e){}}
 
 /* ===== robust close+log: finalize a trade the instant it closes ===== */
@@ -2707,7 +2997,9 @@ function apexVeto(r){
    rs.push('your own record on this setup is '+_pp.w+'W\u2013'+_pp.l+'L — it has not worked for YOU')}}catch(e){}
  if(APEXREG.label==='risk-off'&&long){lvl='veto';
   rs.push('risk-off regime: longs historically bleed in liquidation-driven tape')}
- try{const evs=ECON.concat(nfpDates());const now=Date.now();
+ /* Same tiering as market health: only a high-impact event within 12h raises a
+    warn flag on an individual setup. */
+ try{const evs=econHighImpact();const now=Date.now();
   for(const e of evs){const t=Date.parse(e.d+'T13:00:00Z');const dh=(t-now)/3600000;
    if(dh>0&&dh<12){if(lvl!=='veto')lvl='warn';rs.push(e.label+' in '+Math.round(dh)+'h — event volatility risk');break}}}catch(e){}
  const cal=apexCal(r.setup,r.dir,APEXREG.label,r.score);
@@ -2742,7 +3034,10 @@ function renderApex(){
  var robo=(typeof APEXDB!=='undefined'&&APEXDB.robotTs)?apexAgo(APEXDB.robotTs):null;
  var roboOld=(typeof APEXDB!=='undefined'&&APEXDB.robotTs)?(Date.now()-APEXDB.robotTs>45*60000):true;
  let h='<div class="apxstrip">🧠 <b>'+APEXMEM.setups.length+'</b> setups remembered · '+(dbOk?'<span style="color:var(--green)">☁ saved to cloud ✓</span>':'<span style="color:var(--amber)">☁ cloud offline — saving on this device only</span>')+' · '+(robo?(roboOld?'<span style="color:var(--amber)">🤖 robot last ran '+robo+' ⚠</span>':'<span style="color:var(--green)">🤖 robot ran '+robo+' ✓</span>'):'<span class="sub">🤖 robot: checking…</span>')+'</div>';
- h+='<div class="sub" style="margin:4px 0 8px">Market mode: <b>'+APEXREG.label.toUpperCase()+'</b>'+(APEXREG.why?' — '+APEXREG.why:'')+'</div>';
+ /* Labelled as the memory filing key, not a second regime opinion — the meters
+    in the box at the top are the regime read. This is the bucket past setups
+    get looked up under. */
+ h+='<div class="sub" style="margin:4px 0 8px">Filing today under: <b>'+APEXREG.label.toUpperCase()+'</b>'+(APEXREG.why?' — '+APEXREG.why:'')+' <span style="opacity:.7">· past setups are matched against this bucket</span></div>';
  var pendList=APEXMEM.setups.filter(x=>!x.res).sort((a,b)=>b.ts-a.ts);
  h+='<details class="apxsb"'+(S.sbOpen?' open':'')+' ontoggle="S.sbOpen=this.open;try{localStorage.setItem(\'petpapp_settings\',JSON.stringify(S))}catch(e){}">'
   +'<summary>\uD83C\uDFC1 <b>Scoreboard</b>: <b style="color:var(--green)">'+Aw+'W</b>–<b style="color:var(--red)">'+Al+'L</b>'+(An?' ('+Math.round(100*Aw/An)+'%)':'')+(fromDb?' ☁':'')+' · today '+tw+'W–'+tl+'L'+(pend?' · <b>'+pend+'</b> in progress':'')+' <span class="sub">tap for details ▾</span></summary>'
@@ -2753,7 +3048,7 @@ function renderApex(){
   +'<div class="rbox"><b>'+pend+'</b><span>in progress</span></div>'
   +'</div>'
   +'<div class="sub" style="margin-top:3px">'+(An?('Avg R in plain English: for every $1 risked, signals returned '+(AavgR>=0?'about $'+Math.abs(AavgR).toFixed(2)+' profit':'a loss of about $'+Math.abs(AavgR).toFixed(2))+' on average. Above +0.20R is a real edge.'):'Once setups start resolving, your win/loss record builds here automatically — on this screen and in the cloud.')+'</div>'
-  +(pendList.length?'<div style="margin-top:6px"><b style="font-size:12px">\u23F3 In progress ('+pendList.length+')</b> <span class="sub">— waiting to fill or running; the robot checks them every 20 min</span>'
+  +(pendList.length?'<div style="margin-top:6px"><b style="font-size:13.7px">\u23F3 In progress ('+pendList.length+')</b> <span class="sub">— waiting to fill or running; the robot checks them every 20 min</span>'
     +pendList.slice(0,10).map(p=>'<div class="sub" style="margin-top:2px"><b>'+p.sym+'</b> '+(p.dir==='long'?'\u25B2':'\u25BC')+' '+p.setup+' ('+p.tf+') · started '+apexAgo(p.ts)+' · entry '+fmt(p.entry)+' \u2192 \uD83C\uDFAF '+fmt(p.target)+' / \uD83D\uDED1 '+fmt(p.stop)+'</div>').join('')
     +(pendList.length>10?'<div class="sub">…and '+(pendList.length-10)+' more</div>':'')+'</div>':'')
   +(function(){
@@ -2761,7 +3056,7 @@ function renderApex(){
     var ks=Object.keys(by).map(function(k){var a=by[k],n=a.w+a.l;return{k:k,w:a.w,l:a.l,n:n,wr:n?a.w/n:0}})
       .filter(function(o){return o.n>=3}).sort(function(a,b){return b.wr-a.wr});
     if(!ks.length)return '';
-    return '<div style="margin-top:8px"><b style="font-size:12px">Which setups actually win</b> <span class="sub">— from all '+resolved.length+' resolved setups</span>'
+    return '<div style="margin-top:8px"><b style="font-size:13.7px">Which setups actually win</b> <span class="sub">— from all '+resolved.length+' resolved setups</span>'
      +ks.map(function(o){var pct=Math.round(o.wr*100),col=o.wr>=0.55?'var(--green)':o.wr>=0.45?'var(--amber)':'var(--red)';
        return '<div class="sub" style="margin-top:2px"><b>'+o.k+'</b> <b style="color:'+col+'">'+o.w+'W–'+o.l+'L</b> ('+pct+'%) · '+o.n+' resolved</div>'}).join('')
      +'<div class="sub" style="margin-top:2px">Favor the green ones. Be suspicious of the red ones.</div></div>'})()
@@ -2770,24 +3065,16 @@ function renderApex(){
  if(!results.length){
   h+='<div class="foot" style="margin-top:8px"><b>How APEX works:</b><br>1️⃣ Tap <b>Scan</b> — it checks the whole market<br>2️⃣ Read the verdict box up top (the AI writes it after each scan)<br>3️⃣ Pick from <b>Best trades</b> — each shows its real historical odds<br>4️⃣ Tap one → 📊 Details → ⚡ Place this trade → confirm the ticket<br>5️⃣ Every result is remembered forever — the robot keeps learning even while you sleep</div>';
   el.innerHTML=h;return}
+ /* NOTE: this function used to also render its own "Best trades right now"
+    ranked top-3 list here. That was a second, competing ranking system living
+    alongside the "🎯 Best opportunity right now" card (which uses the newer
+    Decision Engine). Removed as a duplicate — apexScoreAll() below still runs
+    because r.apex/r.apexVeto/r.apexWhy feed the Decision Engine's own
+    confidence penalty, clustering sort and blocked-list elsewhere. */
  apexScoreAll();
  const ranked=results.slice().sort((a,b)=>(b.apex||0)-(a.apex||0));
- const ok=ranked.filter(r=>r.apexVeto!=='veto');
  const vetoed=ranked.filter(r=>r.apexVeto==='veto');
- h+='<div style="margin-top:10px;margin-bottom:2px"><b>🏆 Best trades right now</b> <span class="sub">ranked across the whole market</span></div>';
- h+=(ok.slice(0,3).map(r=>{
-  const ix=results.indexOf(r);const an=apexAnalogs(r);
-  var odds=r.apexP!=null?('≈<b>'+Math.round(r.apexP*100)+'% chance</b> from '+r.apexN+' similar past setups · '+r.apexConf+' confidence'):'still calibrating — score is from confluence for now';
-  return '<div class="apexop" onclick="showDetail('+ix+')">'
-   +'<div><b style="font-size:15px">'+r.sym+'</b> <span class="pill '+r.dir+'">'+(r.dir==='long'?'▲ LONG':'▼ SHORT')+'</span> <span class="sub">'+r.setup+'</span><b style="float:right">APEX '+r.apex+'</b></div>'
-   +'<div class="sub" style="margin-top:2px">'+odds+(r.oiRoc!=null?' · OI '+(r.oiRoc>0?'+':'')+r.oiRoc.toFixed(1)+'%':'')+'</div>'
-   +(an&&!an.insufficient?'<div class="sub">similar setups: '+an.w+'/'+an.n+' won · e.g. '+an.ex.join(', ')+'</div>':'')
-   +(r.pers?'<div class="sub">your own record on this setup: <b>'+r.pers.w+'W–'+r.pers.l+'L</b>'+(r.pers.wr>=0.5?' 👍':' ⚠️')+'</div>':'')
-   +(r.apexVeto==='warn'?'<div style="color:var(--amber);font-size:12px">⚠ '+r.apexWhy.join(' · ')+'</div>':'')
-   +'<div style="margin-top:5px"><button class="ghost" onclick="event.stopPropagation();showDetail('+ix+')">📊 Details & chart</button> <button class="ghost" onclick="event.stopPropagation();apexCommittee('+ix+')">🤖 Ask the AI</button></div>'
-  +'</div>'}).join('')
-  ||'<div class="sub">None pass the safety checks right now — that IS the system working. Wait for better conditions or scan again later.</div>');
- if(vetoed.length){h+='<div style="margin-top:8px"><b>🚫 Blocked for your safety ('+vetoed.length+')</b> <span class="sub">— the reasons are the lesson</span></div>'
+ if(vetoed.length){h+='<div style="margin-top:10px"><b>🚫 Blocked for your safety ('+vetoed.length+')</b> <span class="sub">— the reasons are the lesson</span></div>'
   +vetoed.slice(0,4).map(r=>'<div class="sub" style="margin-top:3px"><b>'+r.sym+'</b> '+r.setup+' — '+r.apexWhy.join(' · ')+'</div>').join('')}
  el.innerHTML=h;apexSave()}
 
@@ -3192,9 +3479,13 @@ function dxLiveHealth() {
  var liqOk = 0, liqN = 0;
  for (var j = 0; j < ALL.length; j++) { liqN++; if (+ALL[j].volume_24h > 300000) liqOk++; }
  var liquidityPct = liqN ? liqOk / liqN * 100 : 50;
+ /* Only HIGH-impact events dock market health. The calendar now also carries
+    minutes, PPI, retail sales and monthly expiries — useful to see, but if
+    every one of them cut the score the app would read as pessimistic almost
+    every week and the signal would stop meaning anything. */
  var hrsToEvent = null;
  try {
-  var evs = ECON.concat(nfpDates()), now = Date.now();
+  var evs = econHighImpact(), now = Date.now();
   for (var e2 = 0; e2 < evs.length; e2++) { var t = Date.parse(evs[e2].d + 'T13:00:00Z'), dh = (t - now) / 3600000; if (dh > 0 && dh < 48) hrsToEvent = (hrsToEvent == null ? dh : Math.min(hrsToEvent, dh)); }
  } catch (e) {}
  return dxHealth({ liquidityPct: liquidityPct, avgAdx: avgAdx, volRegime: DX.volRegime, resultsLen: results.length, allLen: ALL.length, fundingWide: (APEXREG.feat && APEXREG.feat.fwide) || 0, hoursToEvent: hrsToEvent }, { healthFloor: S.dx.healthFloor });
@@ -3421,7 +3712,7 @@ function dxRenderValidation() {
   var v;
   try { v = dxWalkForward(); } catch (e) { el.innerHTML = '<div class="sub">Could not run the test: ' + e.message + '</div>'; return; }
 
-  var why='<div class="dxwhy"><b style="font-size:13px">Why this screen exists</b>'
+  var why='<div class="dxwhy"><b style="font-size:14.8px">Why this screen exists</b>'
    +'<div class="sub" style="margin-top:5px">Every trading app claims its scores mean something. Almost none will show you whether that is true. '
    +'This one checks itself and reports the answer even when the answer is embarrassing.</div>'
    +'<div class="sub" style="margin-top:5px">It walks through your own history in order and re-scores every past setup <b>using only what was known at that moment</b> &mdash; '
@@ -3431,7 +3722,7 @@ function dxRenderValidation() {
    var pct=Math.min(100,Math.round(v.n/v.need*100));
    el.innerHTML = why
     +'<div class="dxresult" style="border-color:var(--blue-bg)">'
-    +'<b style="font-size:16px">Not enough history yet</b>'
+    +'<b style="font-size:18.2px">Not enough history yet</b>'
     +'<div class="sub" style="margin-top:6px">The test needs about <b>'+v.need+'</b> finished setups before it can say anything honest. You have <b>'+v.n+'</b>.</div>'
     +'<div class="scorebar" style="width:100%;height:10px;margin-top:9px"><i style="width:'+pct+'%;background:var(--blue-bg)"></i></div>'
     +'<div class="sub" style="margin-top:5px">'+pct+'% of the way there.</div>'
@@ -3476,15 +3767,15 @@ function dxRenderValidation() {
   el.innerHTML = why
    +'<div class="dxresult" style="border-color:'+colr+'">'
    +'<div class="row" style="justify-content:space-between;align-items:baseline">'
-   +'<b style="color:'+colr+';font-size:19px">'+icon+' '+head+'</b>'
+   +'<b style="color:'+colr+';font-size:21.7px">'+icon+' '+head+'</b>'
    +'<span class="sub">'+v.n+' setups tested</span></div>'
-   +'<div style="margin-top:6px;font-size:13px">'+short+'</div>'
+   +'<div style="margin-top:6px;font-size:14.8px">'+short+'</div>'
    +'<div class="sub" style="margin-top:6px">'+plain+'</div></div>'
 
-   +'<div class="dxcard"><b style="font-size:13px">What to do about it</b>'
+   +'<div class="dxcard"><b style="font-size:14.8px">What to do about it</b>'
    +'<div class="sub" style="margin-top:5px">'+action+'</div></div>'
 
-   +'<div class="dxcard"><b style="font-size:13px">Did being picky actually help?</b>'
+   +'<div class="dxcard"><b style="font-size:14.8px">Did being picky actually help?</b>'
    +'<div class="dxvs">'
    +'<div><b>'+Math.round(base.winRate*100)+'%</b><span>taking every setup</span></div>'
    +'<div class="dxvsarrow">&rarr;</div>'
@@ -3500,8 +3791,8 @@ function dxRenderValidation() {
    +'<details class="lgd"><summary>Show the detail &mdash; score bands vs. what happened</summary>'
    +'<div class="sub" style="margin-top:6px">Each row is a group of setups that scored in that range, and how they really finished. '
    +'<b>The bottom rows should look worse than the top rows.</b> If they all look the same, the score is not doing its job.</div>'
-   +'<div style="margin-top:4px"><b style="font-size:12px">Decision Engine confidence</b>'+bandRows(v.dxBuckets)+'</div>'
-   +'<div style="margin-top:12px"><b style="font-size:12px">Original APEX score (the control)</b>'+bandRows(v.apexBuckets)+'</div>'
+   +'<div style="margin-top:4px"><b style="font-size:13.7px">Decision Engine confidence</b>'+bandRows(v.dxBuckets)+'</div>'
+   +'<div style="margin-top:12px"><b style="font-size:13.7px">Original APEX score (the control)</b>'+bandRows(v.apexBuckets)+'</div>'
    +'<div class="sub" style="margin-top:8px">'+whichBetter+'</div></details>'
 
    +'<details class="lgd"><summary>The fine print, honestly</summary>'
@@ -3538,15 +3829,15 @@ function dxRegimeRead(rp){
  // widest of the three — 42/30/28 is dominated by volatility even though it
  // is under 45%, and must not be softened into the milder tier.
  if(v>=45||(v>=38&&v>=t&&v>=r))return{col:'var(--red)',headline:'Violent and directionless — the worst tape there is',
-  advice:'Amber is dominant. Moves are large and random, so stops get hit on noise even when your read is right. The best trade here is usually none; if you must, use half size and wider stops.'};
+  advice:'Amber is dominant. Moves are large and random, so stops get hit on noise even when your read is right. No setup type works well in this tape.'};
  if(v>=35)return{col:'var(--amber)',headline:'Choppy and volatile — treat every signal with suspicion',
-  advice:'A big amber slice means whipsaws. Whatever the other two bars say, cut your size and demand a much cleaner setup than usual.'};
+  advice:'A big amber slice means whipsaws. Whatever the other two bars say, demand a much cleaner setup than usual.'};
  if(t>=55)return{col:'var(--green)',headline:'Clearly trending — trade with the move',
   advice:'Blue dominates. Favour breakouts and pullbacks in the direction of the trend. Fades and reversals are fighting the tape today — skip them.'};
  if(r>=55)return{col:'var(--green)',headline:'Clearly ranging — trade the edges',
   advice:'Grey dominates. Favour reversals and fades at the extremes of the range. Breakouts will mostly fail and reverse, so leave them alone.'};
  if(t>=45&&t>r)return{col:'var(--amber)',headline:'Leaning trending, but not convincingly',
-  advice:'Blue leads without dominating. Trend setups are the better bet, but the edge is thinner than usual — take only the strongest, at normal size or less.'};
+  advice:'Blue leads without dominating. Trend setups are the better bet, but the edge is thinner than usual — take only the strongest.'};
  if(r>=45&&r>t)return{col:'var(--amber)',headline:'Leaning ranging, but not convincingly',
   advice:'Grey leads without dominating. Fades at the extremes are the better bet, but keep targets modest and do not expect follow-through.'};
  return{col:'var(--amber)',headline:'Mixed — no regime is in charge',
@@ -3571,19 +3862,46 @@ function dxRenderStrip(){
    +'<span class="track"><i style="width:'+val+'%;background:'+col+'"></i></span>'
    +'<b>'+val+'%</b><em>'+(lead?'strongest':'')+'</em></div>'}
  barsEl.innerHTML=
-   meter('Trending',rp.trend,'#3b82f6')
+   meter('Trending',rp.trend,'#7ba0c4')
   +meter('Ranging',rp.range,'#8494ab')
   +meter('Volatile',rp.volatile,'var(--amber)');
  var readEl=document.getElementById('dxRegimeRead');
  if(readEl)readEl.innerHTML=
-   '<div style="font-size:12.5px;color:'+rd.col+'"><b>'+rd.headline+'</b></div>'
+   '<div style="font-size:14.2px;color:'+rd.col+'"><b>'+rd.headline+'</b></div>'
    +'<div class="sub" style="margin-top:2px">'+rd.advice+'</div>'
    +'<div class="sub" style="margin-top:4px">Size of price swings today: <b>'+DX.volRegime+'</b></div>';
- brEl.innerHTML='Health breakdown: '+DX.health.breakdown.map(function(b){return b.label+' '+b.val}).join(' · ');
- var coach;
- if(DX.health.level==='bad')coach='Market health is below your sit-out floor ('+DX.health.floor+'). The honest move is to wait — most edges evaporate in poor conditions.';
- else if(DX.health.level==='warn')coach='Conditions are workable but not great — be selective, size down, and only take the cleanest setup.';
- else coach='Conditions support normal position sizing. Still only take what clears the confidence bar below.';
+ /* The six ingredients of the health number. This grid is their ONLY home in
+    the app — the verdict's bullet list above deliberately no longer repeats
+    them in sentence form. Each carries its plain-English meaning so nothing
+    is lost by not spelling it out twice. */
+ var MEAN={
+  'Liquidity':['plenty of markets are tradeable','thin books — expect worse fills'],
+  'Trend clarity':['moves are following through','direction keeps reversing'],
+  'Volatility health':['swings are a workable size','swings are the wrong size to trade'],
+  'Breadth':['setups showing up across the board','few qualifying setups anywhere'],
+  'Funding calm':['neither side is crowded','one side is crowded and paying to stay there'],
+  'Macro clear':['no major event nearby','a major event is close — it can invalidate any setup']};
+ brEl.innerHTML='<div style="width:100%;margin-bottom:3px">What builds the <b>'+DX.health.score+'</b> above:</div>'
+  +DX.health.breakdown.map(function(b){
+   var col=b.val>=70?'var(--green)':b.val>=50?'var(--amber)':'var(--red)';
+   var m=MEAN[b.label]||['',''];
+   return '<span title="'+(b.val>=60?m[0]:m[1])+'">'+b.label+' <b style="color:'+col+'">'+b.val+'</b></span>'}).join('')
+  +(function(){
+   var weak=DX.health.breakdown.filter(function(b){return b.val<50});
+   if(!weak.length)return '';
+   return '<div style="width:100%;margin-top:3px;color:var(--amber)">Weakest: '
+    +weak.map(function(b){return (MEAN[b.label]||['',''])[1]}).join('; ')+'.</div>'})();
+ /* The one action line. Says what to DO about the number — it does not restate
+    the GO / CAUTION word, which is already the headline. */
+ /* Sizing is decided in exactly one place: here. The regime read above says
+    what KIND of setup fits the tape; this says how BIG. They used to both give
+    size instructions and could disagree ("at normal size or less" under a
+    "normal position sizing is defensible" verdict). */
+ var coach,volCut=(rp.volatile>=35);
+ if(DX.health.level==='bad')coach='Size: none. Below your sit-out floor of '+DX.health.floor+' — the honest move is to wait.';
+ else if(DX.health.level==='warn')coach='Size: reduced. Be selective and take only the cleanest setup.';
+ else coach='Size: normal is defensible. Still only take what clears the confidence bar below.';
+ if(volCut&&DX.health.level!=='bad')coach+=' Volatility is elevated, so cut it further whatever the meters say.';
  coachEl.textContent=coach}
 function dxChecklistHtml(items){
  return items.map(function(c){return '<div class="dxcheck"><span>'+(c.ok?'✓ ':'✗ ')+c.label+'</span><b class="'+(c.pts>=0?'pos':'neg')+'">'+(c.pts>=0?'+':'')+c.pts+'</b></div>'}).join('')}
@@ -3642,7 +3960,7 @@ function dxRenderBest(){
  if(DX.blocked&&DX.blocked.length)
   h+='<details style="margin-top:6px"><summary class="sub">🚫 '+DX.blocked.length+' blocked outright on risk grounds</summary>'
    +DX.blocked.slice(0,6).map(function(c){var r=c.best;return '<div class="sub" style="margin-top:3px"><b>'+r.sym+'</b> '+(r.dir==='long'?'▲':'▼')+' '+r.setup+' — '+((r.apexWhy||[]).join(' · ')||'risk flag')+'</div>'}).join('')+'</details>';
- h+='<div class="dxcard"><b style="font-size:12.5px">🎲 Risk of ruin — '+S.dx.mcTrials+' simulations × '+S.dx.mcHorizon+' trades</b>'
+ h+='<div class="dxcard"><b style="font-size:14.2px">🎲 Risk of ruin — '+S.dx.mcTrials+' simulations × '+S.dx.mcHorizon+' trades</b>'
   +dxMcHtml(DX.mcMine,'Your own journal','the one that actually describes you')
   +dxMcHtml(DX.mcGlobal,'Shared app memory','different population — context only')
   +'<div class="sub" style="margin-top:4px;opacity:.75">These are kept separate on purpose: pooling them lets thousands of memory rows drown out your handful of real trades.</div></div>';
@@ -3713,23 +4031,23 @@ function dxReplaySvg(){
   s+='<text x="'+(ex+4)+'" y="14" fill="#7d8ea6" font-size="9">you entered here</text>'}
  for(var k=start;k<n;k++){
   var x=L+(k-start)*cw+cw/2,up=b.c[k]>=b.o[k];
-  var col=up?'#22c55e':'#ef4444';
+  var col=up?'#7fae8b':'#c98079';
   s+='<line x1="'+x+'" y1="'+y(b.h[k])+'" x2="'+x+'" y2="'+y(b.l[k])+'" stroke="'+col+'" stroke-width="1"/>';
   var yo=y(b.o[k]),yc=y(b.c[k]);
   s+='<rect x="'+(x-cw*0.34)+'" y="'+Math.min(yo,yc)+'" width="'+(cw*0.68)+'" height="'+Math.max(1,Math.abs(yo-yc))+'" fill="'+col+'"/>'}
  function line(v,col,lab){if(v==null)return'';var yy=y(v);
   return '<line x1="'+L+'" y1="'+yy+'" x2="'+(W-R)+'" y2="'+yy+'" stroke="'+col+'" stroke-dasharray="4,3" stroke-width="1.2"/>'
    +'<text x="'+(W-R+3)+'" y="'+(yy+3.5)+'" fill="'+col+'" font-size="9.5" font-family="monospace">'+lab+'</text>'}
- s+=line(DXR.target,'#22c55e','WIN');
+ s+=line(DXR.target,'#7fae8b','WIN');
  s+=line(DXR.entry,'#9aa8bd','IN');
- s+=line(DXR.stop,'#ef4444','OUT');
+ s+=line(DXR.stop,'#c98079','OUT');
  return s+'</svg>'}
 
 /* ---- menu ---- */
 function dxRenderReplayShell(){
  var el=document.getElementById('dxReplayBody');if(!el)return;
  var rec=dxrRecord(),goal=20;
- var h='<div class="dxwhy"><b style="font-size:13px">Why bother with this?</b>'
+ var h='<div class="dxwhy"><b style="font-size:14.8px">Why bother with this?</b>'
   +'<div class="sub" style="margin-top:5px">Looking at an old chart, the right trade is always obvious &mdash; because you can already see what happened next. '
   +'That feeling teaches you <b>nothing</b>, and it is why most people never improve by "studying charts".</div>'
   +'<div class="sub" style="margin-top:5px">This hides the future. You commit first, then watch it play out, exactly like real trading &mdash; '
@@ -3739,8 +4057,8 @@ function dxRenderReplayShell(){
 
  if(rec.n){
   var pct=Math.min(100,Math.round(rec.n/goal*100));
-  h+='<div class="dxcard"><div class="row" style="justify-content:space-between"><b style="font-size:13px">Your practice record</b>'
-   +'<button class="ghost" style="font-size:11px;padding:2px 8px" onclick="dxReplayClearLog()">reset</button></div>'
+  h+='<div class="dxcard"><div class="row" style="justify-content:space-between"><b style="font-size:14.8px">Your practice record</b>'
+   +'<button class="ghost" style="font-size:12.5px;padding:2px 8px" onclick="dxReplayClearLog()">reset</button></div>'
    +'<div class="rgrid" style="margin-top:6px">'
    +'<div class="rbox"><b style="color:'+(rec.wr>=0.5?'var(--green)':'var(--red)')+'">'+Math.round(rec.wr*100)+'%</b><span>won ('+rec.w+'W / '+rec.l+'L)</span></div>'
    +'<div class="rbox"><b class="'+(rec.avgR>=0?'up':'dn')+'">'+(rec.avgR>=0?'+':'')+rec.avgR.toFixed(2)+'R</b><span>average result</span></div>'
@@ -3755,7 +4073,7 @@ function dxRenderReplayShell(){
   h+='</div>'}
 
  h+='<div class="dxcard" style="text-align:center">'
-  +'<button class="primary" style="font-size:15px;padding:12px 22px;width:100%;max-width:340px" onclick="dxReplayStart(true)">'
+  +'<button class="primary" style="font-size:17.1px;padding:12px 22px;width:100%;max-width:340px" onclick="dxReplayStart(true)">'
   +(rec.n?'Practice another trade':'Start your first practice trade')+'</button>'
   +'<div class="sub" style="margin-top:6px">Random market, random moment in the last year. Takes about 30 seconds.</div>'
   +'<details class="lgd" style="margin-top:8px;text-align:left"><summary>Choose a specific market instead</summary>'
@@ -3803,7 +4121,7 @@ function dxReplayUpdate(){
  var view=document.getElementById('dxRView');if(!view||!DXR.bars)return;
  var b=DXR.bars,px=b.c[DXR.visibleN-1],risk=dxrRisk$();
  var h='<div class="dxcard"><div class="row" style="justify-content:space-between">'
-  +'<b style="font-size:13px">'+DXR.sym+' &middot; '+DXR.tf+' candles</b>'
+  +'<b style="font-size:14.8px">'+DXR.sym+' &middot; '+DXR.tf+' candles</b>'
   +'<span class="sub">'+(DXR.done?'result revealed':DXR.startN>0?'trade running':'the future is hidden')+'</span></div>'
   +'<div style="margin-top:6px">'+dxReplaySvg()+'</div>';
 
@@ -3812,8 +4130,8 @@ function dxReplayUpdate(){
    +'<div class="sub" style="margin-top:6px">Everything to the right of the last candle is hidden. Look at what you can see and commit &mdash; '
    +'do you think price goes <b>up</b> or <b>down</b> from '+fmt(px)+'?</div>'
    +'<div class="row" style="gap:8px;margin-top:8px">'
-   +'<button class="primary" style="flex:1;background:var(--green);border-color:var(--green)" onclick="dxReplayPick(\'long\')">&#9650; UP<br><span style="font-size:10px;font-weight:400">buy / long</span></button>'
-   +'<button class="primary" style="flex:1;background:var(--red);border-color:var(--red)" onclick="dxReplayPick(\'short\')">&#9660; DOWN<br><span style="font-size:10px;font-weight:400">sell / short</span></button></div>'
+   +'<button class="primary" style="flex:1;background:var(--green);border-color:var(--green)" onclick="dxReplayPick(\'long\')">&#9650; UP<br><span style="font-size:11.4px;font-weight:400">buy / long</span></button>'
+   +'<button class="primary" style="flex:1;background:var(--red);border-color:var(--red)" onclick="dxReplayPick(\'short\')">&#9660; DOWN<br><span style="font-size:11.4px;font-weight:400">sell / short</span></button></div>'
    +'<div class="row" style="margin-top:6px"><button class="ghost" onclick="dxReplayStart(true)">show me a different chart</button></div>'
    +'<div class="sub" style="margin-top:6px">There is no wrong answer here. The value is in committing before you know.</div>';
 
@@ -3825,7 +4143,7 @@ function dxReplayUpdate(){
    +'<div class="dxopts">'
    +opts.map(function(o){var sel=DXR.rr===o[0];
      return '<button class="dxopt'+(sel?' on':'')+'" onclick="dxReplaySetRR('+o[0]+')">'
-      +'<b>'+dx$(risk*o[0])+'</b><span>'+o[1]+'</span>'+(o[2]?'<span class="sub" style="font-size:9.5px">'+o[2]+'</span>':'')+'</button>'}).join('')
+      +'<b>'+dx$(risk*o[0])+'</b><span>'+o[1]+'</span>'+(o[2]?'<span class="sub" style="font-size:10.8px">'+o[2]+'</span>':'')+'</button>'}).join('')
    +'</div>'
    +'<div class="sub" style="margin-top:7px">Risking <b>'+dx$(risk)+'</b> to make <b>'+dx$(risk*DXR.rr)+'</b>. '
    +'Get out at '+fmt(DXR.stop)+', take profit at '+fmt(DXR.target)+'.</div>'
@@ -3854,8 +4172,8 @@ function dxReplayUpdate(){
   var money=won?'+'+dx$(risk*R.r):lost?'-'+dx$(risk):dx$(0);
   h+='<div class="dxresult" style="border-color:'+col+'">'
    +'<div class="row" style="justify-content:space-between;align-items:baseline">'
-   +'<b style="color:'+col+';font-size:19px">'+head+'</b>'
-   +'<b style="color:'+col+';font-size:19px">'+money+'</b></div>'
+   +'<b style="color:'+col+';font-size:21.7px">'+head+'</b>'
+   +'<b style="color:'+col+';font-size:21.7px">'+money+'</b></div>'
    +'<div class="sub" style="margin-top:4px">'+(R.r!=null?((R.r>=0?'+':'')+R.r.toFixed(2)+'R'):'0R')
    +' &middot; '+DXR.sym+' '+DXR.tf+' &middot; '+(DXR.dir==='long'?'long':'short')+'</div>'
    +'<div class="sub" style="margin-top:7px">'+dxReplayLesson(R,rec)+'</div></div>'
@@ -4114,7 +4432,7 @@ function cycleInfo(){
  var toNext=Math.max(0,Math.ceil((Date.parse(CYC_NEXT_EST+'T00:00:00Z')-Date.now())/86400000));
  var phase,detail,col,plain,advice,icon;
  if(day<180){
-  phase='Post-halving build';col='#3b82f6';icon='&#128260;';
+  phase='Post-halving build';col='#7ba0c4';icon='&#128260;';
   detail='historically quiet accumulation after the halving';
   plain='Bitcoin is in the quiet stretch that has followed every halving.';
   advice='Historically an accumulation phase — slow, unexciting, and where patience has paid. No urgency either way.';
@@ -4152,7 +4470,7 @@ function renderCycle(){
 
   /* labelled timeline — each phase named under its own segment */
   var phases=[
-   {lab:'Build',from:0,to:180,col:'#3b82f6'},
+   {lab:'Build',from:0,to:180,col:'#7ba0c4'},
    {lab:'Bull',from:180,to:371,col:'#1f8f4d'},
    {lab:'Top zone',from:371,to:549,col:'#b9770e'},
    {lab:'Bear',from:549,to:930,col:'#a93226'},
@@ -4169,8 +4487,8 @@ function renderCycle(){
   bar+='</div>';
 
   var h='<div class="cychead" style="border-color:'+c.col+'">'
-   +'<div style="font-size:15px"><b style="color:'+c.col+'">'+c.icon+' '+c.phase+'</b></div>'
-   +'<div class="sub" style="margin-top:4px;font-size:12.5px">'+c.plain+'</div>'
+   +'<div style="font-size:17.1px"><b style="color:'+c.col+'">'+c.icon+' '+c.phase+'</b></div>'
+   +'<div class="sub" style="margin-top:4px;font-size:14.2px">'+c.plain+'</div>'
    +'<div class="sub" style="margin-top:6px"><b>What that means:</b> '+c.advice+'</div></div>'
    +bar
    +'<div class="sub" style="margin-top:8px">'
@@ -4317,7 +4635,7 @@ function init(){
  try{getMarketInfo().then(function(mi){if(mi&&Object.keys(mi).length)MINFO=mi})}catch(e){}
  document.getElementById('jReport').onclick=journalReport;document.getElementById('jCsv').onclick=exportJournal;
  document.getElementById('liveRefresh').onclick=renderLiveAccount;document.getElementById('wallet').onchange=()=>{saveSettings();renderLiveAccount();syncAcctNow();};var _as=document.getElementById('acctSync');if(_as)_as.onclick=syncAcctNow;document.getElementById('maxHeat').onchange=()=>{saveSettings();renderRisk()};
- setNet(S.net||'main');(function(){var seg=document.getElementById('netSeg');if(seg){var bs=seg.querySelectorAll('button');for(var i=0;i<bs.length;i++){(function(b){b.classList.toggle('on',b.dataset.n===(S.net||'main'));b.onclick=function(){setNet(b.dataset.n);saveSettings();var xs=seg.querySelectorAll('button');for(var k=0;k<xs.length;k++)xs[k].classList.toggle('on',xs[k].dataset.n===S.net);var nl=document.getElementById('netLabel');if(nl)nl.textContent=(S.net==='test')?'test-api.pacifica.fi':'';renderTradeStatus();runScan();setTimeout(renderLiveAccount,300);};})(bs[i]);}var nl0=document.getElementById('netLabel');if(nl0)nl0.textContent=(S.net==='test')?'test-api.pacifica.fi':'';}})();renderVerdict();renderRisk();renderJournal();renderLiveAccount();renderTradeStatus();try{renderApex()}catch(e){}try{var _vv=document.getElementById('apexVer');if(_vv)_vv.textContent='v'+APP_VER}catch(e){}try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist()}catch(e){}try{if(S.sigOpen)document.getElementById('sigDrop').open=true;if(S.cycOpen===false)document.getElementById('cycDrop').open=false;renderCycle()}catch(e){}try{applyAiVerdict();setTimeout(function(){apexAutoRead()},2500)}catch(e){}try{apexdbHydrate()}catch(e){}document.getElementById('saveAgent').onclick=async()=>{try{await saveAgentKey(document.getElementById('agentKey').value,document.getElementById('agentPass').value);document.getElementById('agentKey').value='';document.getElementById('agentPass').value='';setStatus('agent key saved & armed','var(--green)')}catch(e){alert(e.message)}};var _nt=document.getElementById('newsToggle');if(_nt){_nt.checked=(S.news!==false);_nt.onchange=function(){S.news=_nt.checked;saveSettings();fetchNews();};}
+ setNet(S.net||'main');(function(){var seg=document.getElementById('netSeg');if(seg){var bs=seg.querySelectorAll('button');for(var i=0;i<bs.length;i++){(function(b){b.classList.toggle('on',b.dataset.n===(S.net||'main'));b.onclick=function(){setNet(b.dataset.n);saveSettings();var xs=seg.querySelectorAll('button');for(var k=0;k<xs.length;k++)xs[k].classList.toggle('on',xs[k].dataset.n===S.net);var nl=document.getElementById('netLabel');if(nl)nl.textContent=(S.net==='test')?'test-api.pacifica.fi':'';renderTradeStatus();runScan();setTimeout(renderLiveAccount,300);};})(bs[i]);}var nl0=document.getElementById('netLabel');if(nl0)nl0.textContent=(S.net==='test')?'test-api.pacifica.fi':'';}})();renderVerdict();renderRisk();renderJournal();renderLiveAccount();renderTradeStatus();try{renderApex()}catch(e){}try{var _vb=document.getElementById('verBadge');if(_vb)_vb.textContent='V.'+APP_VER}catch(e){}try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist()}catch(e){}try{if(S.sigOpen)document.getElementById('sigDrop').open=true;if(S.cycOpen===false)document.getElementById('cycDrop').open=false;renderCycle()}catch(e){}try{applyAiVerdict();setTimeout(function(){apexAutoRead()},2500)}catch(e){}try{apexdbHydrate()}catch(e){}document.getElementById('saveAgent').onclick=async()=>{try{await saveAgentKey(document.getElementById('agentKey').value,document.getElementById('agentPass').value);document.getElementById('agentKey').value='';document.getElementById('agentPass').value='';setStatus('agent key saved & armed','var(--green)')}catch(e){alert(e.message)}};var _nt=document.getElementById('newsToggle');if(_nt){_nt.checked=(S.news!==false);_nt.onchange=function(){S.news=_nt.checked;saveSettings();fetchNews();};}
  (function(){var _dl=document.getElementById('dlLog');if(_dl)_dl.onclick=downloadLogs;var _ap=document.getElementById('agentPass');if(_ap)_ap.oninput=function(){var h=document.getElementById('pwHint');if(h)h.textContent=_ap.value?('strength: '+pwStrength(_ap.value)):'';};var cl=document.getElementById('chLoad');if(cl)cl.onclick=loadChartGrid;var cc=document.getElementById('chCompat');if(cc){cc.checked=!!S.chartsCompat;cc.onchange=function(){S.chartsCompat=cc.checked;saveSettings();var g=document.getElementById('chGrid');if(g&&g.style.display!=='none')loadChartGrid();};}var fc=document.getElementById('fsClose');if(fc)fc.onclick=closeFullChart;var fg=document.getElementById('fsGo');if(fg)fg.onclick=function(){var v=(document.getElementById('fsSym').value||'').trim().toUpperCase();if(v)openFullChart(v);};document.addEventListener('keydown',function(e){if(e.key==='Escape'){var o=document.getElementById('chartFS');if(o&&o.style.display==='flex')closeFullChart();var t=document.getElementById('tsModal');if(t&&t.style.display==='flex')closeTpslModal();}});})();
  window.addEventListener('popstate',()=>{if(document.getElementById('detail').style.display==='block')hideDetail()});
  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&Date.now()-(window._lastScanTs||0)>120000)runScan()});
