@@ -467,7 +467,7 @@ This app is educational and informational only — not financial advice. It neve
   <label for="tkStop">Stop-loss price</label><input type="text" id="tkStop" inputmode="decimal">
   <label for="tkTarget">Take-profit price</label><input type="text" id="tkTarget" inputmode="decimal">
   <label for="tkSlip">Max slippage %</label><input type="text" id="tkSlip" inputmode="decimal" value="0.5">
-  <label for="tkLev">Leverage (x)</label><input type="text" id="tkLev" inputmode="decimal" placeholder="e.g. 5">
+  <label for="tkLev">Leverage (x) <span class="sub" id="tkLevMax"></span></label><input type="text" id="tkLev" inputmode="decimal" placeholder="e.g. 5">
   <div class="sub" id="tkMeta" style="margin-top:8px"></div>
   <div class="sub" id="tkArmNote" style="margin-top:8px"></div>
   <div class="row" style="margin-top:14px;justify-content:flex-end"><button class="ghost" onclick="closeTicket()">Cancel</button><button class="primary" id="tkConfirm" onclick="confirmTradeTicket()">Confirm &amp; send order</button></div>
@@ -510,7 +510,7 @@ This app is educational and informational only — not financial advice. It neve
 
 <script>
 /* ============ CONFIG ============ */
-var APP_VER='20260730g';(function(){try{if('serviceWorker' in navigator){navigator.serviceWorker.getRegistrations().then(function(rs){rs.forEach(function(r){try{r.update()}catch(e){}})}).catch(function(){});}var seen=null;try{seen=localStorage.getItem('petp_ver')}catch(e){}if(seen!==APP_VER){try{localStorage.setItem('petp_ver',APP_VER)}catch(e){}if(window.caches&&caches.keys){caches.keys().then(function(ks){ks.forEach(function(k){try{caches.delete(k)}catch(e){}})}).catch(function(){});}if('serviceWorker' in navigator){navigator.serviceWorker.getRegistrations().then(function(rs){var had=rs.length;rs.forEach(function(r){try{r.unregister()}catch(e){}});if(had){setTimeout(function(){try{location.reload()}catch(e){}},400);}}).catch(function(){});}}}catch(e){}})();
+var APP_VER='20260730h';(function(){try{if('serviceWorker' in navigator){navigator.serviceWorker.getRegistrations().then(function(rs){rs.forEach(function(r){try{r.update()}catch(e){}})}).catch(function(){});}var seen=null;try{seen=localStorage.getItem('petp_ver')}catch(e){}if(seen!==APP_VER){try{localStorage.setItem('petp_ver',APP_VER)}catch(e){}if(window.caches&&caches.keys){caches.keys().then(function(ks){ks.forEach(function(k){try{caches.delete(k)}catch(e){}})}).catch(function(){});}if('serviceWorker' in navigator){navigator.serviceWorker.getRegistrations().then(function(rs){var had=rs.length;rs.forEach(function(r){try{r.unregister()}catch(e){}});if(had){setTimeout(function(){try{location.reload()}catch(e){}},400);}}).catch(function(){});}}}catch(e){}})();
 let API='https://api.pacifica.fi/api/v1';
 function setNet(n){S.net=(n==='test')?'test':'main';API=S.net==='test'?'https://test-api.pacifica.fi/api/v1':'https://api.pacifica.fi/api/v1';AGENT=null;ARMED=false;}
 const MODES={
@@ -1895,8 +1895,10 @@ function openTradeTicket(ix){
  document.getElementById('tkStop').value=plainNum(r.stop);
  document.getElementById('tkTarget').value=plainNum(r.target);
  document.getElementById('tkEntry').value=plainNum(r.entry);document.getElementById('tkMode').value='market';tkModeChange();
- var _mi=(MINFO[r.sym]||{});document.getElementById('tkLev').value=Math.max(1,Math.min(_mi.maxLev||50,Math.round(r.lev||3)));
- document.getElementById('tkLev').oninput=function(){var sl=document.getElementById('tkPctSlider');if(sl&&+sl.value>0)tkPctApply(sl.value);else tkTicketMeta(r);};
+ var _mi=(MINFO[r.sym]||{});var _maxLev=_mi.maxLev||50;
+ document.getElementById('tkLev').value=Math.max(1,Math.min(_maxLev,Math.round(r.lev||3)));
+ var _lmEl=document.getElementById('tkLevMax');if(_lmEl)_lmEl.textContent='(Pacifica max '+_maxLev+'x for '+r.sym+')';
+ document.getElementById('tkLev').oninput=function(){tkClampLev(_maxLev,r.sym);var sl=document.getElementById('tkPctSlider');if(sl&&+sl.value>0)tkPctApply(sl.value);else tkTicketMeta(r);};
  document.getElementById('tkAmount').oninput=function(){var sl=document.getElementById('tkPctSlider'),bx=document.getElementById('tkPctBox');if(sl)sl.value=0;if(bx)bx.value=0;var nt=document.getElementById('tkPctNote');if(nt)nt.textContent='Size by % of your available balance (optional) — or just type an amount above.';tkTicketMeta(r);};
  tkTicketMeta(r);
  var _pSl=document.getElementById('tkPctSlider'),_pBx=document.getElementById('tkPctBox');
@@ -1924,6 +1926,7 @@ async function confirmTradeTicket(){
  if(!(await ensureArmed()))return;
  const _mi=MINFO[r.sym]||{};
  var _lev=Math.round(+((document.getElementById('tkLev')||{}).value)||0);
+ if(_mi.maxLev&&_lev>_mi.maxLev){if(!confirm(r.sym+'\'s max leverage on Pacifica is '+_mi.maxLev+'x — send at '+_mi.maxLev+'x instead of '+_lev+'x?'))return;_lev=_mi.maxLev;document.getElementById('tkLev').value=_lev;}
  var _amt=roundDownLot(+amount,_mi.lot); if(!(_amt>0))_amt=+amount;
  var _pxRef=roundToTick((mode==='limit'&&+entry>0)?+entry:_ref,_mi.tick);
  var _sl=(+stop>0)?roundToTick(+stop,_mi.tick):0;
@@ -2179,6 +2182,12 @@ function tkPctApply(pct){
  if(note)note.textContent=pct+'% of '+(basis.src==='live'?'available balance':'your Account $')+' ($'+fmt(basis.v)+') at '+lev+'x ≈ $'+fmt(buyingPower)+' position size';
 }
 function tkPctPick(p){tkPctApply(p)}
+/* ===== per-asset max leverage, straight from Pacifica's own /info ===== */
+function tkClampLev(maxLev,sym){
+ var el=document.getElementById('tkLev');if(!el)return;
+ var v=+el.value||0;
+ if(v>maxLev){el.value=maxLev;var note=document.getElementById('tkPctNote');if(note)note.textContent=sym+' tops out at '+maxLev+'x on Pacifica — capped it for you.';}
+}
 
 /* ===== scoreboard setup-learning + doobie FX ===== */
 function setupLearnHtml(){
