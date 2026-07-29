@@ -923,7 +923,7 @@ This app is educational and informational only — not financial advice. It neve
    the logo renders this exact string, so what you see on screen IS the version
    the cache-buster and the audit log are using; there is no second place to
    keep in sync. */
-var APP_VER='420.15';(function(){try{if('serviceWorker' in navigator){navigator.serviceWorker.getRegistrations().then(function(rs){rs.forEach(function(r){try{r.update()}catch(e){}})}).catch(function(){});}var seen=null;try{seen=localStorage.getItem('petp_ver')}catch(e){}if(seen!==APP_VER){try{localStorage.setItem('petp_ver',APP_VER)}catch(e){}if(window.caches&&caches.keys){caches.keys().then(function(ks){ks.forEach(function(k){try{caches.delete(k)}catch(e){}})}).catch(function(){});}if('serviceWorker' in navigator){navigator.serviceWorker.getRegistrations().then(function(rs){var had=rs.length;rs.forEach(function(r){try{r.unregister()}catch(e){}});if(had){setTimeout(function(){try{location.reload()}catch(e){}},400);}}).catch(function(){});}}}catch(e){}})();
+var APP_VER='420.16';(function(){try{if('serviceWorker' in navigator){navigator.serviceWorker.getRegistrations().then(function(rs){rs.forEach(function(r){try{r.update()}catch(e){}})}).catch(function(){});}var seen=null;try{seen=localStorage.getItem('petp_ver')}catch(e){}if(seen!==APP_VER){try{localStorage.setItem('petp_ver',APP_VER)}catch(e){}if(window.caches&&caches.keys){caches.keys().then(function(ks){ks.forEach(function(k){try{caches.delete(k)}catch(e){}})}).catch(function(){});}if('serviceWorker' in navigator){navigator.serviceWorker.getRegistrations().then(function(rs){var had=rs.length;rs.forEach(function(r){try{r.unregister()}catch(e){}});if(had){setTimeout(function(){try{location.reload()}catch(e){}},400);}}).catch(function(){});}}}catch(e){}})();
 let API='https://api.pacifica.fi/api/v1';
 function setNet(n){S.net=(n==='test')?'test':'main';API=S.net==='test'?'https://test-api.pacifica.fi/api/v1':'https://api.pacifica.fi/api/v1';AGENT=null;ARMED=false;}
 const MODES={
@@ -4639,7 +4639,20 @@ function init(){
  (function(){var _dl=document.getElementById('dlLog');if(_dl)_dl.onclick=downloadLogs;var _ap=document.getElementById('agentPass');if(_ap)_ap.oninput=function(){var h=document.getElementById('pwHint');if(h)h.textContent=_ap.value?('strength: '+pwStrength(_ap.value)):'';};var cl=document.getElementById('chLoad');if(cl)cl.onclick=loadChartGrid;var cc=document.getElementById('chCompat');if(cc){cc.checked=!!S.chartsCompat;cc.onchange=function(){S.chartsCompat=cc.checked;saveSettings();var g=document.getElementById('chGrid');if(g&&g.style.display!=='none')loadChartGrid();};}var fc=document.getElementById('fsClose');if(fc)fc.onclick=closeFullChart;var fg=document.getElementById('fsGo');if(fg)fg.onclick=function(){var v=(document.getElementById('fsSym').value||'').trim().toUpperCase();if(v)openFullChart(v);};document.addEventListener('keydown',function(e){if(e.key==='Escape'){var o=document.getElementById('chartFS');if(o&&o.style.display==='flex')closeFullChart();var t=document.getElementById('tsModal');if(t&&t.style.display==='flex')closeTpslModal();}});})();
  window.addEventListener('popstate',()=>{if(document.getElementById('detail').style.display==='block')hideDetail()});
  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&Date.now()-(window._lastScanTs||0)>120000)runScan()});
- if('serviceWorker' in navigator&&location.protocol.startsWith('http')){try{navigator.serviceWorker.register('sw.js')}catch(e){}}
+ /* Register with an explicit scope and push updates through as soon as they
+    land, instead of waiting for every tab to close. The worker itself is
+    network-first for the document, so a deploy is live on the next refresh. */
+ if('serviceWorker' in navigator&&location.protocol.startsWith('http')){
+  try{navigator.serviceWorker.register('sw.js',{scope:'./'}).then(function(reg){
+   try{reg.update()}catch(e){}
+   reg.addEventListener('updatefound',function(){
+    var w=reg.installing;if(!w)return;
+    w.addEventListener('statechange',function(){
+     /* A new worker took over a page that already had one: reload once so the
+        user is looking at the version that was just deployed. */
+     if(w.state==='activated'&&navigator.serviceWorker.controller){
+      try{location.reload()}catch(e){}}});});
+  }).catch(function(){});}catch(e){}}
  try{dxWireSettings();dxRenderReplayShell();secRestore()}catch(e){}
  runScan()}
 init();
