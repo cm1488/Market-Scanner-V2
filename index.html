@@ -7807,5 +7807,160 @@ try{renderBot()}catch(e){}
 
 })();
 </script>
+<!-- =========================================================================
+     APEX — UNCAPPED SETUP MEMORY · v420.51
+     -------------------------------------------------------------------------
+     WHY: apexSave() hard-trimmed to the newest 900 setups on every write, and
+     apexdbHydrate() only ever pulled 900 back down from the cloud. The badge
+     therefore froze at "900 setups remembered" while the cloud kept growing,
+     and every learning statistic silently ran on a rolling window.
+
+     WHAT CHANGES:
+       1. The arbitrary 900 trim is gone. Local memory grows freely.
+       2. Hydration pages through the cloud instead of stopping at 900.
+       3. The badge shows the TRUE cloud total, with the device count beside
+          it when they differ.
+       4. A quota valve replaces the fixed cap: if the browser refuses the
+          write, the oldest rows are shed just far enough to fit and you are
+          told. The cloud is unaffected, so nothing is actually lost.
+       5. The walk-forward validator is capped to its most recent slice. It is
+          an O(n^2) routine; uncapped it would freeze the tab.
+     ========================================================================= -->
+<script>
+(function(){'use strict';
+
+/* Only a browser-protection ceiling, not a memory policy. ~25k setups is
+   several months of runway; the quota valve below will usually bite first. */
+var SOFT_MAX=25000;        // stops JSON.stringify from becoming multi-second
+var VALIDATOR_MAX=2500;    // O(n^2) guard — see dxWalkForward wrap below
+window.APEXMEMSTATE={trimmed:0,quota:false,lastSaveOk:true};
+
+/* ---- 1. apexSave: no fixed cap, quota-aware instead ---- */
+try{
+apexSave=function(){
+ try{
+  if(APEXMEM.setups.length>SOFT_MAX)APEXMEM.setups=APEXMEM.setups.slice(-SOFT_MAX);
+  if(APEXMEM.regimes.length>4000)APEXMEM.regimes=APEXMEM.regimes.slice(-4000);
+  var write=function(){localStorage.setItem('petp_apex_mem',JSON.stringify(APEXMEM))};
+  try{write();APEXMEMSTATE.quota=false;APEXMEMSTATE.lastSaveOk=true;return}
+  catch(err){
+   /* Out of localStorage. Shed the OLDEST rows in 10% steps until it fits.
+      Old data is the least valuable here — the decay weighting already
+      discounts it — and the cloud still holds every row regardless. */
+   var dropped=0;
+   for(var i=0;i<8;i++){
+    var cut=Math.max(50,Math.floor(APEXMEM.setups.length*0.10));
+    if(cut>=APEXMEM.setups.length)break;
+    APEXMEM.setups=APEXMEM.setups.slice(cut);dropped+=cut;
+    try{write();APEXMEMSTATE.quota=true;APEXMEMSTATE.trimmed=dropped;
+        APEXMEMSTATE.lastSaveOk=true;return}catch(e2){}
+   }
+   APEXMEMSTATE.quota=true;APEXMEMSTATE.trimmed=dropped;APEXMEMSTATE.lastSaveOk=false;
+  }
+ }catch(e){}
+};
+}catch(e){console.warn('uncap: apexSave override failed',e)}
+
+/* ---- 2. true cloud count, read from the Content-Range header ---- */
+window.apexdbCount=async function(){
+ try{
+  var r=await fetch(SB_URL+'/rest/v1/setups?select=setup_id&limit=1',{
+   headers:{apikey:SB_KEY,Authorization:'Bearer '+SB_KEY,Prefer:'count=exact'}});
+  var cr=r.headers.get('content-range')||'';
+  var m=cr.match(/\/(\d+)\s*$/);
+  if(m){APEXDB.total=+m[1];try{renderApex()}catch(e){}return APEXDB.total}
+ }catch(e){}
+ return null};
+
+/* ---- 3. hydrate pages through the cloud instead of stopping at 900 ---- */
+try{
+apexdbHydrate=async function(){
+ try{
+  var PAGE=1000,MAXPAGES=25,rows=[],off=0;
+  var SEL='setups?select=key,ts,symbol,setup_type,direction,tf,entry,stop,target,'
+   +'score,features,regime,outcomes(result,realized_r,resolved_ts)&order=ts.desc';
+  while(off<PAGE*MAXPAGES&&rows.length<SOFT_MAX){
+   var chunk=await sbReq('GET',SEL+'&limit='+PAGE+'&offset='+off);
+   if(!chunk||!chunk.length)break;
+   rows=rows.concat(chunk);
+   if(chunk.length<PAGE)break;
+   off+=PAGE;
+  }
+  if(!rows.length)return;
+  APEXDB.n=rows.length;apexdbBadge();
+  var byKey={};for(var a=0;a<APEXMEM.setups.length;a++)byKey[APEXMEM.setups[a].key]=APEXMEM.setups[a];
+  var merged=0,adopted=0,needPush=[];
+  for(var b=0;b<rows.length;b++){
+   var d=rows[b];
+   var oc=Array.isArray(d.outcomes)?d.outcomes[0]:d.outcomes;
+   var loc=byKey[d.key];
+   if(loc){
+    if(oc&&!loc.res){loc.res=1;loc.result=oc.result;loc.r=oc.realized_r;
+     loc.resTs=oc.resolved_ts?Date.parse(oc.resolved_ts):Date.now();adopted++}
+    else if(!oc&&loc.res&&loc.result&&loc.result!=='x')needPush.push(loc);
+    continue}
+   APEXMEM.setups.push({key:d.key,ts:Date.parse(d.ts),sym:d.symbol,setup:d.setup_type,
+    dir:d.direction,tf:d.tf,entry:d.entry,stop:d.stop,target:d.target,score:d.score,
+    feat:d.features||{},regime:d.regime,res:oc?1:0,result:oc?oc.result:null,
+    r:oc?oc.realized_r:null,
+    resTs:(oc&&oc.resolved_ts)?Date.parse(oc.resolved_ts):null});merged++}
+  if(merged||adopted){APEXMEM.setups.sort(function(x,y){return x.ts-y.ts});
+   apexSave();try{renderApex()}catch(e){}}
+  for(var c=0;c<needPush.length;c++)apexdbPushOutcome(needPush[c]);
+  var dbKeys={};for(var e2=0;e2<rows.length;e2++)dbKeys[rows[e2].key]=1;
+  var missing=APEXMEM.setups.filter(function(s){return !dbKeys[s.key]});
+  if(missing.length){apexdbPushSetups(missing);
+   for(var f=0;f<missing.length;f++)
+    if(missing[f].res&&missing[f].result&&missing[f].result!=='x')apexdbPushOutcome(missing[f])}
+  apexdbScore();apexdbRobot();apexdbCount();
+  sbReq('POST','audit_log',[{actor:'app',action:'app_boot',
+   details:{ver:'420.51',merged:merged,adopted:adopted,pushed:missing.length,
+            pages:Math.ceil(rows.length/PAGE)}}],'return=minimal')['catch'](function(){});
+ }catch(e){}
+};
+}catch(e){console.warn('uncap: apexdbHydrate override failed',e)}
+
+/* ---- 4. validator guard (O(n^2) — must stay bounded) ---- */
+try{
+ var _wf=dxWalkForward;
+ dxWalkForward=function(opts){
+  var full=APEXMEM.setups,capped=full.length>VALIDATOR_MAX;
+  if(capped)APEXMEM.setups=full.slice(-VALIDATOR_MAX);
+  try{var out=_wf(opts);if(out&&!out.insufficient)out.cappedTo=capped?VALIDATOR_MAX:null;return out}
+  finally{APEXMEM.setups=full}
+ };
+}catch(e){console.warn('uncap: dxWalkForward wrap failed',e)}
+
+/* ---- 5. show the real number ---- */
+try{
+ var _ra=renderApex;
+ renderApex=function(){
+  _ra();
+  try{
+   var strip=document.querySelector('#apexBody .apxstrip');if(!strip)return;
+   var local=APEXMEM.setups.length;
+   var cloud=(typeof APEXDB!=='undefined'&&APEXDB.total!=null)?APEXDB.total:null;
+   var shown=(cloud!=null&&cloud>local)?cloud:local;
+   var extra='';
+   if(cloud!=null&&cloud>local)
+    extra=' <span class="sub">('+local.toLocaleString()+' loaded on this device)</span>';
+   strip.innerHTML=strip.innerHTML.replace(
+    /<b>\d+<\/b> setups remembered/,
+    '<b>'+shown.toLocaleString()+'</b> setups remembered'+extra);
+   if(APEXMEMSTATE.quota&&APEXMEMSTATE.trimmed)
+    strip.innerHTML+='<div class="sub" style="color:var(--amber);margin-top:3px">'
+     +'⚠ This device ran out of local storage, so the oldest '
+     +APEXMEMSTATE.trimmed.toLocaleString()+' were dropped from the phone. '
+     +'The cloud still holds every one of them.</div>';
+  }catch(e){}
+ };
+}catch(e){console.warn('uncap: renderApex wrap failed',e)}
+
+/* ---- 6. get the true count on load, and repaint ---- */
+try{setTimeout(function(){try{apexdbCount()}catch(e){}},3000)}catch(e){}
+try{renderApex()}catch(e){}
+
+})();
+</script>
 </body>
 </html>
