@@ -7566,5 +7566,246 @@ function init(){
  runScan()}
 init();
 </script>
+<!-- =========================================================================
+     APEX TRADING OS — HOTFIX + PAGE REORDER PATCH · v420.50
+     -------------------------------------------------------------------------
+     HOW TO INSTALL (one paste):
+       Open index.html, scroll to the very bottom, and paste this ENTIRE block
+       immediately BEFORE the closing </body> tag — i.e. right after the
+       existing </script> line. Nothing else in the file needs to change.
+
+     WHAT IT FIXES (each is a real, verified bug in 420.49):
+       1. renderBot() crashed on an undefined esc() — the bot panel never
+          rendered at all.
+       2. botSnapshot() read regime keys that do not exist (.trending/.ranging
+          vs the real .trend/.range), so the regime gate refused EVERY cycle
+          with "no regime above 45% — mixed", even in a clean trend. It also
+          called dxRegimeRead() with no arguments (throws) and treated LIVEPOS
+          as an array (it is an object).
+       3. botReconcile() always failed on testnet/live (syncPositions() called
+          with no args, LIVEPOS.filter on an object) — the bot could never
+          start in any real-order mode.
+       4. botEnter() placed a stop on a position that may never have filled:
+          the entry is an IOC order with a price guard, and a legitimate
+          no-fill then triggered a phantom "emergency close". It now verifies
+          the fill before protecting.
+       5. Page order rebuilt around the decision flow:
+          Decide (conditions → best opportunity → signals)
+          → Your money (account → risk → paper trades → bot)
+          → Learning (journal → edge → validator → replay → APEX memory)
+          → Tools (carry → cycle → charts → favorites → alerts)
+          → reference/settings unchanged at the bottom.
+
+     Everything runs after the main script's init(), so all originals exist
+     before they are overridden. Moving DOM nodes preserves their listeners.
+     ========================================================================= -->
+<script>
+(function(){'use strict';
+
+/* ---- 0. version ---- */
+try{
+ APP_VER='420.50';
+ var vb=document.getElementById('verBadge');if(vb)vb.textContent='V.420.50';
+ document.title='APEX Trading OS 420.50';
+ /* deliberately NOT writing petp_ver here: the main script's cache-buster
+    compares that key against its own APP_VER ('420.49') at boot, and a
+    mismatch triggers a cache purge + reload on every single visit. */
+}catch(e){}
+
+/* ---- 1. global esc() shim ----
+   renderBot() calls esc(l.msg); esc only existed as local helpers inside
+   journalListHtml and newsRender. One global fixes every call site without
+   touching the originals. */
+window.esc=window.esc||function(t){return String(t==null?'':t)
+ .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')};
+
+/* ---- 2. botSnapshot rebuilt with the correct field names ---- */
+try{botSnapshot=function(){
+ var v=null,dir=null,vol=null,rmax=null,reg=null;
+ try{v=tradeVerdict()}catch(e){}
+ try{var d0=dxTrendDirection();if(d0&&d0.dir)dir=d0.dir}catch(e){}
+ try{
+  var rp=DX.regimeProb||{};
+  /* real keys: trend / range / volatile */
+  var vals=[rp.trend,rp.range,rp.volatile].filter(function(x){return x!=null});
+  rmax=vals.length?Math.max.apply(null,vals):null;
+  vol=rp.volatile!=null?rp.volatile:null;
+  if(rp.range>=55)reg='ranging';
+  else if(rp.trend>=55)reg='trending';
+ }catch(e){}
+ var cand=null;
+ try{if(DX.top&&DX.top.length&&DX.top[0].best){var b=DX.top[0].best;
+  cand={sym:b.sym,dir:b.dir,setup:b.setup,entry:+b.entry,stop:+b.stop,target:+b.target,
+        veto:b.apexVeto,confidence:DX.top[0].confidence,
+        evidenceCap:(b.dxConf&&b.dxConf.evidenceCap!=null)?b.dxConf.evidenceCap:null,
+        evidenceN:(b.dxConf&&b.dxConf.evidenceN!=null)?b.dxConf.evidenceN:0}}}catch(e){}
+ var R={};try{R=portfolioRisk()}catch(e){}
+ var sizeRiskPct=0,qty=0;
+ try{if(cand&&DX.top[0].sizing)sizeRiskPct=+DX.top[0].sizing.sizedRiskPct||0}catch(e){}
+ try{if(cand&&sizeRiskPct>0){
+  var eq=(BOT.mode==='paper')?botPaperEquity()
+        :((typeof LIVEACCT!=='undefined'&&LIVEACCT&&LIVEACCT.equity>0)?LIVEACCT.equity:(+S.acct||0));
+  var risk=Math.abs(cand.entry-cand.stop);
+  var _mi=MINFO[cand.sym]||{};
+  if(eq>0&&risk>0)qty=roundDownLot((eq*sizeRiskPct/100)/risk,_mi.lot)}}catch(e){}
+ /* LIVEPOS is an object; its .rows array is the live position list. In paper
+    mode the bot's own open paper positions count as "already in". */
+ var already=false;
+ try{if(cand){
+  var lp=(typeof LIVEPOS!=='undefined'&&LIVEPOS&&LIVEPOS.rows)||[];
+  already=lp.some(function(p){return p.sym===cand.sym});
+  if(!already&&BOT.mode==='paper')
+   already=(BOT.paper||[]).some(function(p){return !p.res&&p.sym===cand.sym});
+ }}catch(e){}
+ var corrBlock=null;
+ try{if(cand)corrBlock=corrCapCheck(cand.dir,BOTCFG.maxCorrPos)}catch(e){}
+ var tIlliq=false;
+ try{if(S.net==='test'&&cand)tIlliq=BOTCFG.testnetOk.indexOf(cand.sym)<0}catch(e){}
+ var age=null;try{age=window._lastScanTs?Date.now()-window._lastScanTs:null}catch(e){}
+ return{
+  killed:BOT.killed&&!BOT.on?BOT.killed:null,
+  armed:(typeof ARMED!=='undefined'&&ARMED)||BOT.mode==='paper',
+  wallet:BOT.mode==='paper'?'paper':((S.wallet||'').trim()||null),
+  net:S.net||'main', dataAgeMs:age,
+  tradesToday:BOT.trades, maxTradesPerDay:BOTCFG.maxTradesPerDay,
+  dayLossHit:(function(){try{if(!(+S.dayLoss>0))return false;
+   var pnl=(BOT.mode==='paper')?botPaperDayPnl():todayPnl();
+   return pnl<=-Math.abs(+S.dayLoss)}catch(e){return false}})(),
+  verdictScore:v?v.score:null, floor:+S.dx.healthFloor||55,
+  regime:reg, volPct:vol, regimeMaxPct:rmax, direction:dir,
+  candidate:cand, confFloor:+S.dx.confFloor||0, botConfFloor:botConfFloorNow(),
+  alreadyIn:already, heatPct:R.heatPct, maxHeat:+S.maxHeat||6,
+  corrBlock:corrBlock, sizeRiskPct:sizeRiskPct, qty:qty,
+  testnetIlliquid:tIlliq}};}catch(e){console.warn('patch: botSnapshot override failed',e)}
+
+/* ---- 3. botReconcile fetches positions itself ----
+   The original called syncPositions() with no arguments (throws on rows.map)
+   and filtered LIVEPOS as an array. Read the exchange directly, the same way
+   reconcileOpenTrades() does, and match each open position against a tracked
+   plan carrying a stop. */
+try{botReconcile=async function(){
+ if(BOT.mode==='paper')return{ok:true,note:'paper mode — nothing to reconcile'};
+ try{
+  var addr=((S.wallet||'')+'').trim();
+  if(!validWallet(addr))return{ok:false,note:'no valid Pacifica wallet configured in Settings'};
+  var pos=await jget2(TAPI+'/positions?account='+encodeURIComponent(addr));
+  var open=((pos&&pos.data)||[]).filter(function(p){return Math.abs(+p.amount)>0});
+  if(!open.length)return{ok:true,note:'no open positions'};
+  var naked=open.filter(function(p){
+   var t=(TR.open||[]).find(function(x){return x.sym===symSafe(p.symbol)
+     &&((x.dir==='long')===(p.side==='bid'))});
+   return !t||!(t.stop>0)});
+  if(naked.length)return{ok:false,
+   note:naked.length+' open position'+(naked.length===1?'':'s')+' with no stop recorded ('
+    +naked.map(function(p){return symSafe(p.symbol)}).join(', ')
+    +'). Protect or close manually before starting.'};
+  return{ok:true,note:open.length+' open position'+(open.length===1?'':'s')+', all with stops'};
+ }catch(e){return{ok:false,note:'could not read positions: '+e.message}}};}catch(e){console.warn('patch: botReconcile override failed',e)}
+
+/* ---- 4. botEnter verifies the fill before protecting ----
+   Identical to the original except for the fill check between the entry and
+   the protection step. An IOC order behind a 0.4% price guard can
+   legitimately not fill; placing a stop on nothing and then "emergency
+   closing" a phantom position was noise at best and a reduce-only misfire at
+   worst. positionExists() returning null (couldn't check) falls through to
+   best-effort protection, which is the safe direction. */
+try{botEnter=async function(d){
+ var cid='bot-'+Date.now()+'-'+Math.floor(Math.random()*1e6);
+ /* paper: simulate, model the cost, touch nothing */
+ if(BOT.mode==='paper'){
+  var slip=(+S.slipPct||0.03)/100;
+  var fill=d.dir==='long'?d.entry*(1+slip):d.entry*(1-slip);
+  var _eq=botPaperEquity(), _riskAmt=_eq*(+d.riskPct||0)/100;
+  BOT.paper.push({ts:Date.now(),sym:d.sym,dir:d.dir,setup:d.setup,
+   entry:+fill.toFixed(8),stop:d.stop,target:d.target,qty:d.qty,
+   riskPct:d.riskPct,eqAt:+_eq.toFixed(2),riskAmt:+_riskAmt.toFixed(2),
+   res:0,result:null,r:null,pnl:null,resTs:null,cid:cid});
+  BOT.trades++;botSave();
+  botLog('entry','PAPER '+d.sym+' '+d.dir.toUpperCase()+' '+d.qty+' @ '+fmt(fill)
+   +' (modelled '+(+S.slipPct||0.03)+'% slippage) · stop '+fmt(d.stop)+' target '+fmt(d.target),
+   {sym:d.sym,dir:d.dir,paper:true});
+  return{ok:true,paper:true}}
+
+ /* testnet / live: real orders */
+ var label=(S.net==='test'?'TESTNET ':'LIVE ');
+ var mi=MINFO[d.sym]||{};
+ var qty=roundDownLot(d.qty,mi.lot); if(!(qty>0))qty=d.qty;
+ var guard=roundToTick(d.dir==='long'?d.entry*1.004:d.entry*0.996,mi.tick);
+ try{
+  await signedPost('create_order','/orders/create',{
+   symbol:d.sym, side:d.dir==='long'?'bid':'ask', amount:plainNum(qty),
+   tif:'IOC', reduce_only:false, client_order_id:cid,
+   price:plainNum(guard)},'bot entry');
+ }catch(e){
+  botLog('error',label+'entry REJECTED for '+d.sym+' — '+e.message+'. Nothing was opened.',{sym:d.sym});
+  return{ok:false}}
+
+ BOT.trades++;botSave();
+ botLog('entry',label+d.sym+' '+d.dir.toUpperCase()+' '+qty+' submitted · '+d.why,{sym:d.sym,dir:d.dir});
+
+ /* NEW: did the IOC actually fill? */
+ var filled=null;
+ try{await sleep(1500);filled=await positionExists({sym:d.sym,dir:d.dir})}catch(e){}
+ if(filled===false){
+  botLog('no-trade',label+d.sym+' IOC order did not fill inside the 0.4% slippage guard — '
+   +'nothing was opened, nothing to protect.',{sym:d.sym});
+  return{ok:false,unfilled:true}}
+
+ /* protection — the non-negotiable step */
+ var protected_=false;
+ try{
+  await pacificaSetTpsl({symbol:d.sym,side:d.dir==='long'?'bid':'ask',
+   stop_loss:{stop_price:plainNum(roundToTick(d.stop,mi.tick)),trigger_price_type:'mark_price'},
+   take_profit:{stop_price:plainNum(roundToTick(d.target,mi.tick)),trigger_price_type:'mark_price'}});
+  protected_=true;
+  botLog('protect','Stop '+fmt(d.stop)+' and target '+fmt(d.target)+' placed ON THE EXCHANGE for '
+   +d.sym+' — the position survives this tab dying.',{sym:d.sym});
+ }catch(e){
+  botLog('error','STOP PLACEMENT FAILED for '+d.sym+' after retries — '+e.message,{sym:d.sym});
+ }
+
+ if(!protected_&&BOTCFG.minStopFailAbort){
+  /* a small certain loss beats an unprotected leveraged position — not tunable */
+  try{
+   await signedPost('create_order','/orders/create',{
+    symbol:d.sym, side:d.dir==='long'?'ask':'bid', amount:plainNum(qty),
+    tif:'IOC', reduce_only:true, client_order_id:cid+'-abort'},'emergency close');
+   botLog('abort','UNPROTECTED — market-closed '+d.sym+' immediately. Took a small '
+    +'certain loss rather than hold a leveraged position with no stop.',{sym:d.sym});
+  }catch(e2){
+   botKill('could not close an unprotected position on '+d.sym+' — '+e2.message
+    +'. CLOSE IT MANUALLY NOW.');}
+  return{ok:false,aborted:true}}
+ return{ok:true}};}catch(e){console.warn('patch: botEnter override failed',e)}
+
+/* ---- 5. page reorder ----
+   Decide → Your money → Learning → Tools. Reference sections (scan history,
+   tab explainer, Settings, Live trading, About, DX settings) stay at the
+   bottom untouched — the first body-level <details> (Scan history) is the
+   anchor everything is re-inserted before. Moving nodes keeps their event
+   listeners, so nothing needs re-wiring. */
+try{
+ var ORDER=[
+  /* decide */    'lossBanner','botStrip','verdict','dxBestCard','sigDrop:card',
+  /* your money */'liveCard','riskCard','openDrop:card','botCard',
+  /* learning */  'journalCard','edgeCard','dxValCard','dxReplayCard','apexCard',
+  /* tools */     'carryCard','cycCard','chartsCard','favDrop:card','alertsDrop:card'];
+ var anchor=document.querySelector('body > details');
+ if(anchor)ORDER.forEach(function(key){
+  var el;
+  if(key.indexOf(':card')>0){
+   var inner=document.getElementById(key.split(':')[0]);
+   el=inner&&inner.closest('.card');
+  }else el=document.getElementById(key);
+  if(el)document.body.insertBefore(el,anchor)});
+}catch(e){}
+
+/* ---- 6. repaint the bot surfaces with the fixed code ---- */
+try{renderBotStrip()}catch(e){}
+try{renderBotPaperMirror()}catch(e){}
+try{renderBot()}catch(e){}
+
+})();
+</script>
 </body>
 </html>
