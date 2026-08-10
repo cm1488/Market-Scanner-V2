@@ -8585,5 +8585,115 @@ try{renderBotPaperMirror()}catch(e){}
 
 })();
 </script>
+<!-- =========================================================================
+     APEX — PER-SETUP VALIDATION BREAKDOWN · v420.55
+     -------------------------------------------------------------------------
+     The validator's score bands blended all setup types together, which can
+     hide everything: a setup the score ranks well and one it ranks badly
+     average out to "no signal". This adds a per-setup section to the 🔬 card:
+
+       For each setup type (current timeframe only, inherited from 420.53):
+         · n and W–L                — the sample size, in your face
+         · win % and avg R          — how the setup itself performed
+         · "does the score rank IT?" — within-setup: the half of its trades
+           the score liked more vs the half it liked less. If the score
+           means anything for this setup, the liked half should win more.
+         · setups with n < 15 are greyed: too thin to read, shown only so
+           absence is visible.
+
+     Statistical honesty is rendered, not just intended: the section carries
+     its own multiple-comparisons warning sized to the number of setups
+     shown, because testing 7 setups means ~1 in 3 chance one looks good by
+     luck at the usual threshold. Pure display — reads DX.lastValidation,
+     computes nothing new at decision time, changes no score and no gate.
+     ========================================================================= -->
+<script>
+(function(){'use strict';
+
+try{
+ APP_VER='420.55';
+ var vb=document.getElementById('verBadge');if(vb)vb.textContent='V.420.55';
+ document.title='APEX Trading OS 420.55';
+}catch(e){}
+
+function pctS(x){return (100*x).toFixed(0)+'%'}
+function rS(x){return (x>=0?'+':'')+x.toFixed(2)+'R'}
+
+window.dxPerSetupBreakdown=function(rows){
+ var by={};
+ rows.forEach(function(x){(by[x.setup]=by[x.setup]||[]).push(x)});
+ var out=Object.keys(by).map(function(k){
+  var g=by[k],n=g.length,w=g.filter(function(x){return x.win}).length;
+  var avgR=g.reduce(function(s,x){return s+x.r},0)/n;
+  var res={setup:k,n:n,w:w,l:n-w,winRate:w/n,avgR:avgR,thin:n<15,split:null};
+  if(n>=20){
+   /* within-setup ranking test: median-split by confidence */
+   var sorted=g.slice().sort(function(a,b){return a.dxConf-b.dxConf});
+   var half=Math.floor(n/2);
+   var lo=sorted.slice(0,half),hi=sorted.slice(n-half);
+   var wHi=hi.filter(function(x){return x.win}).length/half;
+   var wLo=lo.filter(function(x){return x.win}).length/half;
+   var rHi=hi.reduce(function(s,x){return s+x.r},0)/half;
+   var rLo=lo.reduce(function(s,x){return s+x.r},0)/half;
+   res.split={half:half,wHi:wHi,wLo:wLo,rHi:rHi,rLo:rLo,lift:wHi-wLo,rLift:rHi-rLo};
+  }
+  return res;
+ }).sort(function(a,b){return b.n-a.n});
+ return out};
+
+window.dxRenderPerSetup=function(){
+ try{
+  var el=document.getElementById('dxValBody');if(!el)return;
+  if(el.querySelector('.persetup'))return;
+  var v=DX.lastValidation;
+  if(!v||v.insufficient||!v.rows||v.rows.length<30)return;
+  var rows=v.rows,S_=dxPerSetupBreakdown(rows);
+  if(!S_.length)return;
+  var shown=S_.filter(function(x){return !x.thin}).length;
+  var h='<div class="persetup" style="margin-top:10px;border-top:1px solid var(--line);padding-top:8px">'
+   +'<b style="font-size:13.7px">By setup type</b> '
+   +'<span class="sub">— the blended bands above can average a good setup and a bad one into "no signal". '
+   +'This splits them apart. Read the n column first, always.</span>';
+  S_.forEach(function(x){
+   var dim=x.thin?'opacity:.55;':'';
+   h+='<div style="margin-top:7px;padding:7px 9px;border:1px solid var(--line);border-radius:9px;'+dim+'">'
+    +'<b>'+x.setup+'</b> <span class="sub">· n='+x.n+' ('+x.w+'W–'+x.l+'L)</span>'
+    +'<div class="sub" style="margin-top:2px">won '+pctS(x.winRate)+' · averaged '+rS(x.avgR)+' per setup</div>';
+   if(x.thin){
+    h+='<div class="sub" style="margin-top:2px;color:var(--amber)">Too thin to read — under 15 resolved. Shown so the absence is visible, not as evidence.</div>';
+   }else if(x.split){
+    var s=x.split,good=s.lift>0.05&&s.rLift>0;
+    var bad=s.lift<-0.05;
+    h+='<div class="sub" style="margin-top:2px">Does the score rank this setup? Its higher-confidence half won '
+     +pctS(s.wHi)+' ('+rS(s.rHi)+'), the lower half '+pctS(s.wLo)+' ('+rS(s.rLo)+') — '
+     +(good?'<span style="color:var(--green)">the score is telling them apart here</span>'
+       :bad?'<span style="color:var(--red)">backwards — the score liked the worse half</span>'
+       :'<span style="color:var(--muted)">no separation</span>')
+     +'</div>';
+   }else{
+    h+='<div class="sub" style="margin-top:2px">Between 15 and 19 resolved — performance readable, ranking test needs 20+.</div>';
+   }
+   h+='</div>';
+  });
+  var luck=(1-Math.pow(0.95,shown));
+  h+='<div class="sub" style="margin-top:7px;padding:6px 9px;border:1px solid var(--line);border-radius:8px">'
+   +'⚠ '+S_.length+' setup types tested ('+shown+' readable). At these sizes there is roughly a '
+   +(100*luck).toFixed(0)+'% chance at least one readable setup looks good by pure luck. '
+   +'Trust a pattern only if it is still there in the NEXT export — one snapshot nominates, the second confirms.</div>';
+  h+='</div>';
+  var div=document.createElement('div');div.innerHTML=h;
+  el.appendChild(div.firstChild);
+ }catch(e){}};
+
+try{
+ var _drv2=dxRenderValidation;
+ dxRenderValidation=function(){
+  _drv2();
+  setTimeout(dxRenderPerSetup,600);
+ };
+}catch(e){console.warn('persetup: wrap failed',e)}
+
+})();
+</script>
 </body>
 </html>
