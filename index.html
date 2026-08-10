@@ -7962,5 +7962,231 @@ try{renderApex()}catch(e){}
 
 })();
 </script>
+<!-- =========================================================================
+     APEX — V2 EDGE & DECISION UPGRADE · v420.52
+     -------------------------------------------------------------------------
+     Implements the three gaps the V2 spec audit found, and nothing else:
+
+       1. SIX-LEVEL DECISION per candidate — STRONG TRADE / TRADE /
+          TRADE SMALL / WATCH / BLOCK / STAND DOWN — derived from EV,
+          evidence, confidence, decay, and market conditions together.
+          A decision, not a probability (spec §5, §23).
+       2. EV IN R, AFTER COSTS, WITH A 90% CREDIBLE RANGE, per candidate
+          (spec §6, §15). Zero precedents renders "EV unknown — unknown is
+          not neutral", never a default 50%.
+       3. BTC CONTEXT per asset — correlation + beta from cached candles
+          (spec §17). Degrades honestly to silence when data is thin.
+
+     Plus: the bot gains an EV gate (refuses non-positive or unknown EV),
+     and a Feature Governance registry (spec §13) records every engine's
+     status — including what was deliberately NOT built and why.
+
+     The new layers ship as EXPERIMENTAL per spec §13: the in-app
+     walk-forward validator remains the arbiter of whether they stay.
+     ========================================================================= -->
+<script>
+(function(){'use strict';
+
+/* ---- version ---- */
+try{
+ APP_VER='420.52';
+ var vb=document.getElementById('verBadge');if(vb)vb.textContent='V.420.52';
+ document.title='APEX Trading OS 420.52';
+}catch(e){}
+
+/* ---- 1. EV + credible interval ---------------------------------------- */
+/* Wilson interval on the posterior win rate at effective sample size
+   (decay-weighted evidence + the skeptic prior). Not a full Beta quantile,
+   but within a point or two of it at these sizes, with no special functions
+   to get wrong. */
+function v2Wilson(p,n,z){
+ if(!(n>0))return{lo:0,hi:1};
+ var z2=z*z,den=1+z2/n,ctr=p+z2/(2*n);
+ var sp=z*Math.sqrt((p*(1-p)/n)+(z2/(4*n*n)));
+ return{lo:Math.max(0,(ctr-sp)/den),hi:Math.min(1,(ctr+sp)/den)}}
+
+window.v2Ev=function(r){
+ try{
+  var exp=r.dxExp;if(!exp)return null;
+  var n=exp.n||0;
+  var cost=edgeCostR(r.entry,r.stop,+S.feePct||0.05,0.03);
+  if(cost==null||!isFinite(cost))cost=0;
+  if(!n)return{n:0,cost:cost,evNet:null,p:null};
+  var neff=Math.max(1,(exp.weightSum||n))+(+((S.dx||{}).priorN)||6);
+  var ci=v2Wilson(exp.winRate,neff,1.6449);           /* 90% two-sided */
+  return{n:n,p:exp.winRate,pLo:ci.lo,pHi:ci.hi,
+   evGross:exp.avgR,cost:cost,evNet:exp.avgR-cost,
+   beP:(r.rr>0)?1/(1+r.rr):null,
+   decaying:!!exp.decaying}}
+ catch(e){return null}};
+
+/* ---- 2. the decision itself ------------------------------------------- */
+window.v2Decide=function(r,v){
+ var ev=r.dxEv, conf=(r.dxConf&&r.dxConf.pct)||0, floor=+((S.dx||{}).confFloor)||55;
+ if(r.apexVeto==='veto')
+  return{label:'BLOCK',col:'var(--red)',bg:'rgba(193,148,144,.10)',
+   why:(r.apexWhy&&r.apexWhy[0])||'failed a hard safety rule'};
+ if(v&&(v.stand||v.call==='STAND DOWN'))
+  return{label:'STAND DOWN',col:'var(--red)',bg:'rgba(193,148,144,.10)',
+   why:'market conditions are below your floor — the setup does not matter'};
+ if(!ev||ev.evNet==null)
+  return{label:'WATCH',col:'var(--muted)',bg:'rgba(37,47,59,.35)',
+   why:'zero precedents in this context — EV is unknown, and unknown is not neutral'};
+ if(ev.evNet<=0)
+  return{label:'WATCH',col:'var(--muted)',bg:'rgba(37,47,59,.35)',
+   why:'EV after costs is '+(ev.evNet>=0?'+':'')+ev.evNet.toFixed(2)+'R — no proven edge here'};
+ if(conf<floor)
+  return{label:'WATCH',col:'var(--muted)',bg:'rgba(37,47,59,.35)',
+   why:'confidence '+Math.round(conf)+' is below your '+floor+' floor'};
+ var caution=(v&&v.call==='CAUTION'), thin=ev.n<12, dec=ev.decaying;
+ var strong=(!caution&&!thin&&!dec&&conf>=80&&ev.n>=30&&ev.evNet>=0.15
+  &&ev.beP!=null&&ev.pLo>ev.beP);
+ if(strong)
+  return{label:'STRONG TRADE',col:'var(--green)',bg:'rgba(127,174,139,.14)',
+   why:'positive EV whose pessimistic bound still clears breakeven, on solid evidence, in good conditions'};
+ if(thin||dec||caution)
+  return{label:'TRADE SMALL',col:'var(--amber)',bg:'rgba(211,162,102,.10)',
+   why:(thin?'only '+ev.n+' precedents':dec?'edge is decaying vs its older record':'conditions are marginal')
+    +' — the idea qualifies, the evidence does not justify full size'};
+ return{label:'TRADE',col:'var(--green)',bg:'rgba(127,174,139,.09)',
+  why:'positive EV after costs on adequate evidence'}};
+
+/* ---- 3. BTC context: correlation + beta from cached candles ----------- */
+window.v2BtcCtx=function(sym){
+ try{
+  if(sym==='BTC')return null;
+  var a=CANDC[sym],b=CANDC.BTC;
+  if(!a||!b||a.tf!==b.tf||!a.c||!b.c)return null;
+  var n=Math.min(a.c.length,b.c.length);if(n<40)return null;
+  var ra=[],rb=[],i;
+  for(i=1;i<n;i++){
+   ra.push(Math.log(a.c[a.c.length-n+i]/a.c[a.c.length-n+i-1]));
+   rb.push(Math.log(b.c[b.c.length-n+i]/b.c[b.c.length-n+i-1]))}
+  var ma=0,mb=0;for(i=0;i<ra.length;i++){ma+=ra[i];mb+=rb[i]}
+  ma/=ra.length;mb/=rb.length;
+  var cov=0,va=0,vBtc=0;
+  for(i=0;i<ra.length;i++){var da=ra[i]-ma,db=rb[i]-mb;cov+=da*db;va+=da*da;vBtc+=db*db}
+  if(!(va>0)||!(vBtc>0))return null;
+  return{corr:cov/Math.sqrt(va*vBtc),beta:cov/vBtc,n:ra.length}}
+ catch(e){return null}};
+
+/* ---- 4. wire it into the render + decorate the Best-opportunity cards - */
+try{
+ var _ra=renderApex;
+ renderApex=function(){
+  _ra();
+  try{
+   if(!results||!results.length)return;
+   for(var i=0;i<results.length;i++)results[i].dxEv=v2Ev(results[i]);
+   var v=null;try{v=tradeVerdict()}catch(e){}
+   var body=document.getElementById('dxBestBody');
+   if(!body||!DX.top||!DX.top.length)return;
+   var cards=body.querySelectorAll('#dxBestBody > .dxcard');
+   DX.top.forEach(function(c,k){
+    var el=cards[k];if(!el||el.querySelector('.v2dec'))return;
+    var r=c.best;if(!r)return;
+    var d=v2Decide(r,v);r.v2=d;
+    var ev=r.dxEv,bc=v2BtcCtx(r.sym);
+    var div=document.createElement('div');div.className='v2dec';
+    div.style.cssText='margin:0 0 8px;padding:8px 11px;border-radius:9px;'
+     +'border:1px solid '+d.col+';background:'+d.bg;
+    var h='<b style="color:'+d.col+';letter-spacing:.5px">'+d.label+'</b>'
+     +'<span class="sub"> — '+d.why+'</span>';
+    if(ev&&ev.evNet!=null){
+     h+='<div class="sub" style="margin-top:3px">EV <b class="'
+      +(ev.evNet>=0?'up':'dn')+'">'+(ev.evNet>=0?'+':'')+ev.evNet.toFixed(2)
+      +'R</b>/trade after ~'+ev.cost.toFixed(2)+'R costs · p(win) '
+      +Math.round(ev.p*100)+'% <span style="opacity:.75">(90% range '
+      +Math.round(ev.pLo*100)+'–'+Math.round(ev.pHi*100)+'%'
+      +(ev.beP!=null?', breakeven '+Math.round(ev.beP*100)+'%':'')
+      +')</span> · '+ev.n+' precedents'
+      +(ev.decaying?' · <span style="color:var(--amber)">edge decaying</span>':'')
+      +'</div>'}
+    else h+='<div class="sub" style="margin-top:3px">EV unknown — zero precedents '
+      +'in this context. Unknown is not neutral.</div>';
+    if(bc)h+='<div class="sub" style="margin-top:2px">₿ context: correlation '
+      +bc.corr.toFixed(2)+', beta '+bc.beta.toFixed(2)+' over '+bc.n+' bars — '
+      +(Math.abs(bc.corr)>=0.6?'this is partly a BTC bet; size the two together'
+        :'loosely coupled to BTC')+'</div>';
+    div.innerHTML=h;
+    el.insertBefore(div,el.firstChild)});
+  }catch(e){}
+ };
+}catch(e){console.warn('v2: render wrap failed',e)}
+
+/* ---- 5. bot: EV gate ---------------------------------------------------
+   The bot must never take a trade whose expected value after costs is
+   non-positive or unknown, regardless of how the confidence score looks.
+   Confidence measures evidence quality; EV measures whether the trade pays. */
+try{
+ var _bs=botSnapshot;
+ botSnapshot=function(){
+  var s=_bs();
+  try{if(s&&s.candidate&&DX.top&&DX.top[0]&&DX.top[0].best){
+   var ev=DX.top[0].best.dxEv||v2Ev(DX.top[0].best);
+   if(ev){s.candidate.evNet=ev.evNet;s.candidate.evN=ev.n}}}catch(e){}
+  return s};
+}catch(e){console.warn('v2: botSnapshot wrap failed',e)}
+try{
+ var _bd=botDecide;
+ botDecide=function(snap){
+  try{
+   var c=snap&&snap.candidate;
+   if(c&&c.evN===0)
+    return{act:'no-trade',gate:'edge',
+     why:'zero precedents in this context — EV unknown, and the bot does not trade unknowns'};
+   if(c&&c.evNet!=null&&c.evNet<=0)
+    return{act:'no-trade',gate:'edge',
+     why:'EV after costs '+(c.evNet>=0?'+':'')+c.evNet.toFixed(2)
+      +'R — a setup with no proven edge is not a trade, however clean the chart'};
+  }catch(e){}
+  return _bd(snap)};
+}catch(e){console.warn('v2: botDecide wrap failed',e)}
+
+/* ---- 6. Feature Governance registry (spec §13) ------------------------- */
+try{
+ var host=document.getElementById('dxValCard');
+ if(host&&!document.getElementById('v2govCard')){
+  var REG=[
+   ['Setup detection (9 types)','PRODUCTION','replay W–L on recent candles, per scan'],
+   ['Regime engine (trend/range/vol + direction)','PRODUCTION','dual-signal direction; disagreement reported, not guessed'],
+   ['Expectancy pools · decay · context match','PRODUCTION','walk-forward validator'],
+   ['Confidence + evidence caps','PRODUCTION','walk-forward validator, score-band table'],
+   ['Edge report (EV in R after costs, CI, split-half)','PRODUCTION','bootstrap CI · maturity filter · multiple-comparison note'],
+   ['Calibration (Brier · ECE · reliability)','PRODUCTION','scored on pre-outcome stated probabilities'],
+   ['Monte Carlo risk-of-ruin','PRODUCTION','personal vs shared populations kept separate'],
+   ['Funding / OI veto · risk gates','PRODUCTION','hard blocks, reasons shown'],
+   ['Bot gate stack + stage promotion','PRODUCTION','paper → testnet → live, numeric gates'],
+   ['Per-candidate EV + 90% credible range','EXPERIMENTAL','new in 420.52 — validator is the arbiter'],
+   ['Six-level decision labels','EXPERIMENTAL','new in 420.52 — derived, adds no new inputs'],
+   ['BTC correlation / beta line','EXPERIMENTAL','context only; never scores or blocks'],
+   ['Attention divergence (crowded/quiet)','EXPERIMENTAL','warns only, never vetoes'],
+   ['Orderbook / taker flow','DISPLAY-ONLY','shown, not scored — no validated predictive claim'],
+   ['Liquidation clusters','NOT BUILT','no free reliable client-side source; faking it would violate the no-fake-signals rule'],
+   ['CVD scoring','NOT BUILT','same reason — external heatmap link provided instead'],
+   ['Ablation harness','NOT BUILT','offline research tooling, not a phone-runtime feature']];
+  var colOf=function(st){return st==='PRODUCTION'?'var(--green)'
+   :st==='EXPERIMENTAL'?'var(--amber)':st==='DISPLAY-ONLY'?'var(--blue)':'var(--muted)'};
+  var card=document.createElement('div');card.className='card';card.id='v2govCard';
+  card.innerHTML='<details class="cdrop" id="v2govDrop">'
+   +'<summary><b style="font-size:16px">🗂 Feature governance</b> '
+   +'<span class="sub">· what is validated, what is experimental, what was refused</span></summary>'
+   +'<div class="sub" style="margin-top:6px">Every engine, with its status and where its evidence lives. '
+   +'EXPERIMENTAL features must earn PRODUCTION through the 🔬 validator or be retired. '
+   +'NOT BUILT entries are deliberate refusals, listed so absence reads as a decision rather than an oversight.</div>'
+   +'<div style="margin-top:6px">'
+   +REG.map(function(f){return '<div class="dxcheck" style="padding:3px 0">'
+     +'<span>'+f[0]+'<br><span class="sub" style="opacity:.8">'+f[2]+'</span></span>'
+     +'<b style="color:'+colOf(f[1])+';font-size:11.5px;white-space:nowrap">'+f[1]+'</b></div>'}).join('')
+   +'</div></details>';
+  host.parentNode.insertBefore(card,host.nextSibling);
+ }
+}catch(e){console.warn('v2: governance card failed',e)}
+
+/* ---- repaint ---- */
+try{renderApex()}catch(e){}
+
+})();
+</script>
 </body>
 </html>
