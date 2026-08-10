@@ -8958,5 +8958,432 @@ try{tfBackfill();renderApex()}catch(e){}
 
 })();
 </script>
+<!-- =========================================================================
+     APEX — PROFILE SEPARATION · v420.58
+     -------------------------------------------------------------------------
+     Completes what 420.53–57 started. Evidence is now pooled per COMBINATION
+     of speed tab AND profile, so Day+Conservative and Day+Aggressive are
+     separate experiments — as they should be, since the profile changes
+     which setups may fire, the RSI bands, the 200-SMA gate and the minimum
+     reward:risk. Same setup name under two profiles is not the same setup.
+
+     UNLIKE TIMEFRAME, PROFILE CANNOT BE RECOVERED. The memory key is
+        symbol|setup|direction|timeframe|day
+     with no profile field, so historical rows are genuinely unlabelled.
+     Rather than guess, this:
+       · excludes unlabelled rows from profile-scoped pools (strict), and
+       · offers a one-tap control to label them yourself, since you know
+         what you were running. User-asserted, never inferred.
+
+     The active combination is printed on the Command Center and the
+     validator so it is never ambiguous which experiment you are looking at.
+     ========================================================================= -->
+<script>
+(function(){'use strict';
+
+try{
+ APP_VER='420.58';
+ var vb=document.getElementById('verBadge');if(vb)vb.textContent='V.420.58';
+ document.title='APEX Trading OS 420.58';
+}catch(e){}
+
+function curTf(){try{return (MODES[S.mode]||{}).trig||null}catch(e){return null}}
+function curProf(){try{return S.profile||null}catch(e){return null}}
+function comboLabel(){
+ try{
+  var m=(MODES[S.mode]||{}).label||S.mode;
+  var p=(PROFILES[S.profile]||{}).label||S.profile;
+  return m+' · '+p;
+ }catch(e){return ''}}
+window.apexCombo=comboLabel;
+
+/* ---- strict pools: timeframe AND profile must both match ---- */
+try{
+dxPoolFor=function(setupType){
+ var now=Date.now(),out=[],tf=curTf(),pf=curProf();
+ for(var i=0;i<APEXMEM.setups.length;i++){
+  var s=APEXMEM.setups[i];if(!s.res||s.result==='x')continue;
+  if(setupType&&s.setup!==setupType)continue;
+  if(tf&&s.tf!==tf)continue;
+  if(pf&&s.profile!==pf)continue;                 /* NEW */
+  var f=s.feat||{},fund=f.fund!=null?f.fund:0;
+  out.push({ageDays:(now-s.ts)/86400000,win:s.result==='w',
+   r:(s.result==='w'?(s.r!=null?s.r:1):-1),
+   context:{regime:s.regime,volRegime:(s.volReg2||dxVolFromLegacy(f.vr)),
+    fundingRegime:fund>25?'crowded-long':fund<-25?'crowded-short':'neutral',
+    htfAlign:s.bias||null}});
+ }
+ return out};
+}catch(e){console.warn('profsep: dxPoolFor failed',e)}
+
+try{
+apexCal=function(setup,dir,regime,sc){
+ var tf=curTf(),pf=curProf();
+ const res=APEXMEM.setups.filter(s=>s.res&&s.result!=='x'
+   &&(!tf||s.tf===tf)&&(!pf||s.profile===pf));
+ let pool=res.filter(s=>s.setup===setup&&s.regime===regime&&apexBucket(s.score)===apexBucket(sc));
+ let scope='setup+regime+grade';
+ if(pool.length<12){pool=res.filter(s=>s.setup===setup&&s.regime===regime);scope='setup+regime'}
+ if(pool.length<12){pool=res.filter(s=>s.setup===setup);scope='setup'}
+ if(pool.length<8)return{p:null,n:pool.length,scope:scope};
+ const w=pool.filter(s=>s.result==='w').length;
+ return{p:(w+1)/(pool.length+2),n:pool.length,w:w,scope:scope}};
+}catch(e){console.warn('profsep: apexCal failed',e)}
+
+/* validator: filter by profile, then let the existing tf wrapper run */
+try{
+ var _wf=dxWalkForward;
+ dxWalkForward=function(opts){
+  var pf=curProf(),full=APEXMEM.setups;
+  if(pf)APEXMEM.setups=full.filter(function(s){return s.profile===pf});
+  try{return _wf(opts)}finally{APEXMEM.setups=full}};
+}catch(e){console.warn('profsep: dxWalkForward wrap failed',e)}
+
+/* ---- label-your-history control (user-asserted, never inferred) ---- */
+window.apexLabelProfile=function(p){
+ try{
+  if(!p)return;
+  var n=0;
+  for(var i=0;i<APEXMEM.setups.length;i++){
+   var s=APEXMEM.setups[i];
+   if(!s.profile){s.profile=p;n++}}
+  if(n){apexSave();
+   try{setStatus('labelled '+n.toLocaleString()+' unlabelled setups as '+p,'var(--green)')}catch(e){}}
+  try{renderApex()}catch(e){}
+ }catch(e){}};
+
+/* ---- show the active combination + the unlabelled remainder ---- */
+try{
+ var _ra=renderApex;
+ renderApex=function(){
+  _ra();
+  try{
+   var strip=document.querySelector('#apexBody .apxstrip');if(!strip)return;
+   /* Always rebuild: this block must track the CURRENT tab, so a cached copy
+      from an earlier render is worse than none. Strip any previous block
+      (and the warning that follows it) before appending a fresh one. */
+   strip.innerHTML=strip.innerHTML.replace(/<div class="apxcombo[\s\S]*$/,'');
+   {
+    var tf=curTf(),pf=curProf();
+    var nCombo=APEXMEM.setups.filter(function(s){
+     return (!tf||s.tf===tf)&&(!pf||s.profile===pf)}).length;
+    strip.innerHTML+='<div class="apxcombo sub" style="margin-top:3px">'
+     +'Tracking <b>'+comboLabel()+'</b> — <b>'+nCombo.toLocaleString()+'</b> setups in this exact combination. '
+     +'Every speed tab × profile keeps its own separate history.</div>';
+    var unl=APEXMEM.setups.filter(function(s){return !s.profile}).length;
+    if(unl>0){
+     strip.innerHTML+='<div class="sub" style="margin-top:3px;color:var(--amber)">⚠ '
+      +unl.toLocaleString()+' older setups have no profile recorded, so they are excluded from '
+      +'profile-scoped stats. Profile was never stored in the record key, so it cannot be '
+      +'recovered automatically — but if you know what you were running, label them: '
+      +'<span style="display:inline-block;margin-top:4px">'
+      +'<button class="ghost" style="padding:2px 8px;font-size:12px" onclick="apexLabelProfile(\'conservative\')">Conservative</button> '
+      +'<button class="ghost" style="padding:2px 8px;font-size:12px" onclick="apexLabelProfile(\'balanced\')">Balanced</button> '
+      +'<button class="ghost" style="padding:2px 8px;font-size:12px" onclick="apexLabelProfile(\'aggressive\')">Aggressive</button>'
+      +'</span></div>';
+    }
+   }
+  }catch(e){}
+ };
+}catch(e){console.warn('profsep: renderApex wrap failed',e)}
+
+/* ---- validator + edge report name the combination they tested ---- */
+try{
+ var _drv=dxRenderValidation;
+ dxRenderValidation=function(){
+  _drv();
+  setTimeout(function(){
+   try{
+    var el=document.getElementById('dxValBody');if(!el)return;
+    var n=el.querySelector('.tfnote');
+    if(n)n.textContent='Tested on '+comboLabel()+' setups only — each speed tab × profile '
+      +'is its own experiment. Switch either control to test a different combination.';
+   }catch(e){}
+  },500)};
+}catch(e){console.warn('profsep: validator note failed',e)}
+
+try{renderApex()}catch(e){}
+
+})();
+</script>
+<!-- =========================================================================
+     APEX — DISPLAY / SCORING SYNC · v420.59
+     -------------------------------------------------------------------------
+     420.54 scoped the dashboards by TIMEFRAME, before profile separation
+     existed, and used a loose `!s.tf ||` clause so unlabelled rows matched
+     every tab. After 420.57/58 the SCORING pools became strict on both
+     timeframe and profile — leaving the displays showing a different (and
+     larger) population than the numbers were computed from. Same class of
+     bug as the original: it fails open and looks fine.
+
+     This re-points every display surface at the exact same predicate the
+     scoring uses: timeframe AND profile must both match, no loose clause.
+     Covered: Command Center scoreboard, shared cloud scoreboard, Edge
+     report + calibration, loss-streak sizing input, bot paper stats /
+     mirror / stage gate. New paper trades are stamped with profile as well
+     as timeframe.
+     ========================================================================= -->
+<script>
+(function(){'use strict';
+
+try{
+ APP_VER='420.59';
+ var vb=document.getElementById('verBadge');if(vb)vb.textContent='V.420.59';
+ document.title='APEX Trading OS 420.59';
+}catch(e){}
+
+function curTf(){try{return (MODES[S.mode]||{}).trig||null}catch(e){return null}}
+function curProf(){try{return S.profile||null}catch(e){return null}}
+/* THE single predicate. Scoring and display must never diverge again. */
+function inCombo(s){
+ var tf=curTf(),pf=curProf();
+ if(tf&&s.tf!==tf)return false;
+ if(pf&&s.profile!==pf)return false;
+ return true}
+window.apexInCombo=inCombo;
+
+var swapped=false;
+function withComboMemory(fn){
+ if(swapped)return fn();
+ var full=APEXMEM.setups,_sv=apexSave,pend=false;
+ APEXMEM.setups=full.filter(inCombo);
+ apexSave=function(){pend=true};
+ swapped=true;
+ try{return fn()}
+ finally{APEXMEM.setups=full;apexSave=_sv;swapped=false;if(pend)try{apexSave()}catch(e){}}}
+
+var pswapped=false;
+function withComboPaper(fn){
+ if(pswapped)return fn();
+ var full=BOT.paper,tf=curTf(),pf=curProf();
+ BOT.paper=full.filter(function(p){
+  if(tf&&p.tf!==tf)return false;
+  if(pf&&p.profile!==pf)return false;
+  return true});
+ pswapped=true;
+ try{return fn()}finally{BOT.paper=full;pswapped=false}}
+
+/* ---- Command Center ---- */
+try{
+ var _ra=renderApex,lastCombo=null;
+ renderApex=function(){
+  withComboMemory(_ra);
+  try{
+   var c=curTf()+'|'+curProf();
+   if(c!==lastCombo){lastCombo=c;apexdbScore()}   /* cloud follows the combo too */
+  }catch(e){}
+ };
+}catch(e){console.warn('sync: renderApex failed',e)}
+
+/* ---- shared cloud scoreboard: timeframe from the db, profile locally ----
+   The cloud `setups` table has no profile column, so a profile-accurate
+   shared number is not obtainable server-side. Rather than show a figure
+   that quietly means something else, it is labelled for what it is. */
+try{
+apexdbScore=async function(){
+ try{
+  var tf=curTf();
+  var q=tf?'setups?select=outcomes(result,realized_r)&tf=eq.'+encodeURIComponent(tf)+'&limit=10000'
+          :'setups?select=outcomes(result,realized_r)&limit=10000';
+  const rows=await sbReq('GET',q);
+  if(!rows)return;
+  let w=0,l=0,sum=0,n=0;
+  for(const row of rows){
+   var oc=Array.isArray(row.outcomes)?row.outcomes[0]:row.outcomes;
+   if(!oc)continue;
+   if(oc.result==='w'){w++;n++;sum+=(oc.realized_r!=null?oc.realized_r:0)}
+   else if(oc.result==='l'){l++;n++;sum+=(oc.realized_r!=null?oc.realized_r:-1)}}
+  APEXDB.tot={w:w,l:l,n:n,avgR:n?sum/n:0,tf:tf,profileScoped:false};
+  try{renderApex()}catch(e){}
+ }catch(e){}};
+}catch(e){console.warn('sync: apexdbScore failed',e)}
+
+/* ---- Edge report + calibration ---- */
+try{
+ var _rer=renderEdgeReport;
+ renderEdgeReport=function(){
+  withComboMemory(_rer);
+  try{
+   var el=document.getElementById('edgeBody');if(!el)return;
+   var n=el.querySelector('.tfnote2');
+   var txt='Scoped to '+(typeof apexCombo==='function'?apexCombo():curTf())
+    +' only — switch speed tab or profile to report on a different combination.';
+   if(n)n.textContent=txt;
+  }catch(e){}
+ };
+}catch(e){console.warn('sync: renderEdgeReport failed',e)}
+
+/* ---- sizing input ---- */
+try{
+dxRecentLossStreak=function(){
+ var resolved=APEXMEM.setups.filter(function(s){
+  return s.res&&s.result!=='x'&&inCombo(s)})
+  .sort(function(a,b){return b.ts-a.ts});
+ var streak=0;
+ for(var i=0;i<resolved.length;i++){if(resolved[i].result==='l')streak++;else break}
+ return streak};
+}catch(e){console.warn('sync: lossStreak failed',e)}
+
+/* ---- bot: stamp profile too, and scope every paper surface ---- */
+try{
+ var _be=botEnter;
+ botEnter=async function(d){
+  var b4=0;try{b4=BOT.paper.length}catch(e){}
+  var out=await _be(d);
+  try{
+   var n=0;
+   for(var i=b4;i<BOT.paper.length;i++){
+    if(!BOT.paper[i].tf){BOT.paper[i].tf=curTf();n++}
+    if(!BOT.paper[i].profile){BOT.paper[i].profile=curProf();n++}}
+   if(n)botSave();
+  }catch(e){}
+  return out};
+}catch(e){}
+try{var f=botPaperStats;botPaperStats=function(){return withComboPaper(f)}}catch(e){}
+try{var f2=botStageState;botStageState=function(){return withComboPaper(f2)}}catch(e){}
+try{var f3=renderBotPaperMirror;renderBotPaperMirror=function(){return withComboPaper(f3)}}catch(e){}
+try{var f4=renderBot;renderBot=function(){return withComboPaper(f4)}}catch(e){}
+
+try{renderApex()}catch(e){}
+try{renderBotPaperMirror()}catch(e){}
+
+})();
+</script>
+<!-- =========================================================================
+     APEX — SUPABASE PROFILE COLUMN · v420.60
+     -------------------------------------------------------------------------
+     REQUIRES this to have been run in the Supabase SQL editor first:
+        ALTER TABLE setups ADD COLUMN IF NOT EXISTS profile text;
+        CREATE INDEX IF NOT EXISTS setups_tf_profile_idx ON setups (tf, profile);
+
+     Without the column, PostgREST rejects both the insert and the select,
+     so this patch DETECTS the column before using it and falls back to the
+     old behaviour if it is absent. That way deploying the code before
+     running the SQL degrades quietly instead of silently killing cloud
+     sync — which is exactly how the last two bugs happened.
+
+       1. probe once per session: does setups.profile exist?
+       2. if yes  — push profile, hydrate it, and scope the shared
+                    scoreboard by tf AND profile (fully accurate)
+       3. if no   — behave exactly as 420.59 and say so on the badge
+     ========================================================================= -->
+<script>
+(function(){'use strict';
+
+try{
+ APP_VER='420.60';
+ var vb=document.getElementById('verBadge');if(vb)vb.textContent='V.420.60';
+ document.title='APEX Trading OS 420.60';
+}catch(e){}
+
+function curTf(){try{return (MODES[S.mode]||{}).trig||null}catch(e){return null}}
+function curProf(){try{return S.profile||null}catch(e){return null}}
+
+/* ---- 1. does the column exist? probe once, cache for the session ---- */
+window.SBPROFILE={known:false,has:false};
+window.sbProbeProfile=async function(){
+ try{
+  await sbReq('GET','setups?select=profile&limit=1');
+  SBPROFILE={known:true,has:true};
+ }catch(e){
+  SBPROFILE={known:true,has:false};
+ }
+ try{apexdbBadge()}catch(e){}
+ return SBPROFILE.has};
+
+/* ---- 2. push profile when the column is there ---- */
+try{
+apexdbPushSetups=function(rows){
+ if(!rows||!rows.length)return;
+ var out=rows.map(function(p){
+  var o={key:p.key,ts:new Date(p.ts).toISOString(),symbol:p.sym,setup_type:p.setup,
+   direction:p.dir,tf:p.tf,entry:p.entry,stop:p.stop,target:p.target,score:p.score,
+   features:p.feat||{},regime:p.regime||'unknown'};
+  if(SBPROFILE.has&&p.profile)o.profile=p.profile;
+  return o});
+ sbReq('POST','setups?on_conflict=key',out,'resolution=ignore-duplicates,return=minimal')
+  ['catch'](function(){});};
+}catch(e){console.warn('sbprof: push override failed',e)}
+
+/* ---- 3. hydrate profile back down ---- */
+try{
+ var _hyd=apexdbHydrate;
+ apexdbHydrate=async function(){
+  if(!SBPROFILE.known){try{await sbProbeProfile()}catch(e){}}
+  var r=await _hyd.apply(this,arguments);
+  /* the base hydrate does not know about profile; fill it in for rows that
+     have it in the cloud but not locally */
+  if(SBPROFILE.has){
+   try{
+    var got=await sbReq('GET','setups?select=key,profile&profile=not.is.null&limit=10000');
+    if(got&&got.length){
+     var map={};got.forEach(function(x){map[x.key]=x.profile});
+     var n=0;
+     for(var i=0;i<APEXMEM.setups.length;i++){
+      var s=APEXMEM.setups[i];
+      if(!s.profile&&map[s.key]){s.profile=map[s.key];n++}}
+     if(n){apexSave();try{renderApex()}catch(e){}}
+    }
+   }catch(e){}
+  }
+  return r};
+}catch(e){console.warn('sbprof: hydrate wrap failed',e)}
+
+/* ---- 4. shared scoreboard scoped by tf AND profile when possible ---- */
+try{
+apexdbScore=async function(){
+ try{
+  if(!SBPROFILE.known){try{await sbProbeProfile()}catch(e){}}
+  var tf=curTf(),pf=curProf(),q='setups?select=outcomes(result,realized_r)&limit=10000';
+  if(tf)q+='&tf=eq.'+encodeURIComponent(tf);
+  if(SBPROFILE.has&&pf)q+='&profile=eq.'+encodeURIComponent(pf);
+  const rows=await sbReq('GET',q);
+  if(!rows)return;
+  let w=0,l=0,sum=0,n=0;
+  for(const row of rows){
+   var oc=Array.isArray(row.outcomes)?row.outcomes[0]:row.outcomes;
+   if(!oc)continue;
+   if(oc.result==='w'){w++;n++;sum+=(oc.realized_r!=null?oc.realized_r:0)}
+   else if(oc.result==='l'){l++;n++;sum+=(oc.realized_r!=null?oc.realized_r:-1)}}
+  APEXDB.tot={w:w,l:l,n:n,avgR:n?sum/n:0,tf:tf,
+   profileScoped:!!(SBPROFILE.has&&pf)};
+  try{renderApex()}catch(e){}
+ }catch(e){}};
+}catch(e){console.warn('sbprof: score override failed',e)}
+
+/* ---- 5. say which mode the cloud is in, so it is never ambiguous ---- */
+try{
+ var _bad=apexdbBadge;
+ apexdbBadge=function(){
+  _bad();
+  try{
+   var el=document.getElementById('apexDb');if(!el)return;
+   if(!SBPROFILE.known)return;
+   el.innerHTML+=SBPROFILE.has
+    ? ' <span class="sub" style="opacity:.75">· cloud scoped by tab + profile</span>'
+    : ' <span class="sub" style="color:var(--amber)">· cloud scoped by tab only —'
+      +' run the ALTER TABLE to add profile</span>';
+  }catch(e){}
+ };
+}catch(e){console.warn('sbprof: badge wrap failed',e)}
+
+/* ---- 6. push profile for rows the cloud is missing it on ---- */
+window.apexdbBackfillProfile=async function(){
+ try{
+  if(!SBPROFILE.has){alert('Add the profile column in Supabase first (ALTER TABLE setups ADD COLUMN profile text).');return}
+  var rows=APEXMEM.setups.filter(function(s){return s.profile});
+  if(!rows.length){alert('No locally labelled setups to upload yet.');return}
+  for(var i=0;i<rows.length;i+=200){
+   var chunk=rows.slice(i,i+200).map(function(p){return{key:p.key,profile:p.profile}});
+   await sbReq('POST','setups?on_conflict=key',chunk,'resolution=merge-duplicates,return=minimal');
+  }
+  try{setStatus('uploaded profile labels for '+rows.length.toLocaleString()+' setups','var(--green)')}catch(e){}
+  apexdbScore();
+ }catch(e){try{setStatus('profile upload failed: '+e.message,'var(--amber)')}catch(_e){}}};
+
+try{sbProbeProfile()}catch(e){}
+
+})();
+</script>
 </body>
 </html>
