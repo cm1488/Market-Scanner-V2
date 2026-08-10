@@ -8695,5 +8695,268 @@ try{
 
 })();
 </script>
+<!-- =========================================================================
+     APEX — AI QUOTA RESILIENCE · v420.56
+     -------------------------------------------------------------------------
+     THE BUG: apexAI() had a fallback ladder of models but threw the moment
+     ANY model returned 429 — even though Gemini free-tier quotas are
+     per-model, so the next rung was usually still available. Once the first
+     model's daily bucket emptied, every AI feature showed "free tier
+     reached" for the rest of the day while working models sat unused.
+
+     FIXES:
+       1. 429 now falls through to the next model; the error only surfaces
+          when EVERY rung is exhausted — and then says when quota resets
+          (midnight Pacific) and which models were tried.
+       2. The ladder gains the -lite models, which carry the largest free
+          quotas. Unknown names 404 and are skipped harmlessly, so the list
+          survives Google renaming things.
+       3. A 400 caused by thinkingConfig on a model that rejects it retries
+          once without it, instead of failing the rung.
+       4. The 30-minute auto-verdict no longer burns quota while the tab is
+          hidden — background auto-rescans skip the AI call; the math
+          verdict (which costs nothing) still updates as always.
+       5. The model that actually answered is recorded (APEXAI_LAST) and
+          shown in the small print of the AI outputs.
+     Everything else — prompts, per-day report cache, MAX_TOKENS
+     continuation, the server-proxy fallback — is preserved exactly.
+     ========================================================================= -->
+<script>
+(function(){'use strict';
+
+try{
+ APP_VER='420.56';
+ var vb=document.getElementById('verBadge');if(vb)vb.textContent='V.420.56';
+ document.title='APEX Trading OS 420.56';
+}catch(e){}
+
+window.APEXAI_LAST=null;
+
+try{
+apexAI=async function(kind,data){
+ const key=((S.gemKey||((document.getElementById('gemKey')||{}).value||''))+'').trim();
+ if(key){
+  const models=['gemini-flash-latest','gemini-3-flash','gemini-2.5-flash',
+                'gemini-3-flash-lite','gemini-2.5-flash-lite','gemini-2.0-flash'];
+  const BUDGET=8192;
+  const call1=(m,prompt,noThink)=>fetch(
+   'https://generativelanguage.googleapis.com/v1beta/models/'+m+':generateContent?key='+encodeURIComponent(key),{
+   method:'POST',headers:{'Content-Type':'application/json'},
+   body:JSON.stringify({contents:[{parts:[{text:prompt}]}],
+    generationConfig:Object.assign({temperature:0.4,maxOutputTokens:BUDGET},
+     noThink?{}:{thinkingConfig:{thinkingBudget:0}})})});
+  let lastErr='',quotaHit=[],anyUsable=false;
+  for(const m of models){
+   let r=await call1(m,apexPromptFor(kind,data));
+   if(r.status===404){lastErr='model '+m+' unavailable';continue}
+   let j={};try{j=await r.json()}catch(e){}
+   if(r.status===400&&JSON.stringify(j).indexOf('API key')>=0)
+    throw new Error('Gemini says the API key is invalid — re-copy it from aistudio.google.com/app/apikey into Settings.');
+   if(r.status===400){
+    /* often thinkingConfig rejected by this model — one retry without it */
+    r=await call1(m,apexPromptFor(kind,data),true);
+    try{j=await r.json()}catch(e){j={}}
+   }
+   if(r.status===429){quotaHit.push(m);lastErr='quota';continue}   /* THE FIX: next rung */
+   if(!r.ok){lastErr=(j.error&&j.error.message)||('AI error '+r.status);continue}
+   anyUsable=true;
+   let cand=j.candidates&&j.candidates[0];
+   let t=((cand&&cand.content&&cand.content.parts)||[]).map(p=>p.text||'').join('');
+   let tries=0;
+   while(cand&&cand.finishReason==='MAX_TOKENS'&&tries<2){
+    tries++;
+    const contPrompt=apexPromptFor(kind,data)
+     +'\n\nYou already began answering but were cut off before finishing. Here is exactly what you wrote so far:\n"""'+t+'"""\nContinue writing from precisely where that left off — do not repeat any of it and do not restart — and finish the reply, keeping to the format and word limit already given.';
+    const r2=await call1(m,contPrompt);
+    if(!r2.ok)break;
+    let j2={};try{j2=await r2.json()}catch(e){}
+    cand=j2.candidates&&j2.candidates[0];
+    const more=((cand&&cand.content&&cand.content.parts)||[]).map(p=>p.text||'').join('');
+    if(!more)break;
+    t+=more}
+   if(t){APEXAI_LAST={model:m,ts:Date.now()};return t}
+   lastErr='empty reply'}
+  if(quotaHit.length&&!anyUsable){
+   /* every rung that exists is out of quota — say so precisely */
+   var reset=new Date();  /* Gemini free quotas reset at midnight US-Pacific */
+   throw new Error('Every free-tier model is out of quota for today ('+quotaHit.length
+    +' tried: '+quotaHit.join(', ')+'). Daily limits reset at midnight US-Pacific. '
+    +'The cached daily read and all math-based verdicts keep working.');
+  }
+  throw new Error(lastErr||'AI unavailable')}
+ const r=await fetch(SB_URL+'/functions/v1/apex-ai',{method:'POST',
+  headers:{'Content-Type':'application/json',apikey:SB_KEY,Authorization:'Bearer '+SB_KEY},
+  body:JSON.stringify({kind:kind,data:data})});
+ let j={};try{j=await r.json()}catch(e){}
+ if(r.status===404)throw new Error('Add your Gemini key in Settings (the "Gemini AI key" box) to turn the AI on.');
+ if(!r.ok)throw new Error(j.error||('AI error '+r.status));
+ return j.text||''};
+}catch(e){console.warn('aifix: apexAI override failed',e)}
+
+/* ---- 4. don't spend quota on a tab nobody is looking at ---- */
+try{
+ var _aar=apexAutoRead;
+ apexAutoRead=async function(force){
+  if(!force&&typeof document!=='undefined'&&document.hidden)return;
+  return _aar(force)};
+}catch(e){console.warn('aifix: apexAutoRead wrap failed',e)}
+
+/* ---- 5. show which model answered, in the small print ---- */
+try{
+ var _fmt=apexAiFmt;
+ apexAiFmt=function(t){
+  var h=_fmt(t);
+  try{if(APEXAI_LAST&&Date.now()-APEXAI_LAST.ts<15000)
+   h+='<div class="sub" style="opacity:.7;margin-top:3px">· answered by '+APEXAI_LAST.model+'</div>'}catch(e){}
+  return h};
+}catch(e){console.warn('aifix: apexAiFmt wrap failed',e)}
+
+})();
+</script>
+<!-- =========================================================================
+     APEX — TIMEFRAME BACKFILL + STRICT SCOPING · v420.57
+     -------------------------------------------------------------------------
+     FOUND IN THE 2026-08-10 EXPORT: every row came back with an empty
+     timeframe column, so the 420.53/54 separation was doing NOTHING. The
+     filters read `(!s.tf || s.tf===current)` — a deliberate fallback so
+     legacy rows would not vanish — but when EVERY row lacks tf, that clause
+     makes every row match every timeframe. The feature was silently inert.
+     That is my bug, and it is the dangerous kind: it fails open and looks
+     like it works.
+
+     THE RECOVERY: no data was lost. apexLogSetups builds its key as
+        symbol|setup|direction|timeframe|day
+     so the timeframe is embedded in every record ever written, local and
+     cloud. This backfills tf from the key on load, then keeps it stamped.
+
+       1. tfBackfill() — parses tf out of the key for any row missing it,
+          runs once at load and after every cloud hydrate, saves once.
+       2. Filters become STRICT: after backfill, a row that still has no tf
+          is genuinely unknown and is excluded from timeframe-scoped pools
+          rather than silently counted everywhere.
+       3. The Command Center reports any untagged remainder instead of
+          hiding it, so "inert" can never look like "working" again.
+       4. apexLogSetups stamps tf explicitly as well as profile — belt and
+          braces, so new rows never depend on the key parse.
+     ========================================================================= -->
+<script>
+(function(){'use strict';
+
+try{
+ APP_VER='420.57';
+ var vb=document.getElementById('verBadge');if(vb)vb.textContent='V.420.57';
+ document.title='APEX Trading OS 420.57';
+}catch(e){}
+
+var VALID_TF={'1m':1,'3m':1,'5m':1,'15m':1,'30m':1,'1h':1,'2h':1,'4h':1,'1d':1};
+function curTf(){try{return (MODES[S.mode]||{}).trig||null}catch(e){return null}}
+
+/* ---- 1. recover tf from the key ---- */
+window.tfBackfill=function(){
+ var fixed=0,unknown=0;
+ try{
+  for(var i=0;i<APEXMEM.setups.length;i++){
+   var s=APEXMEM.setups[i];
+   if(s.tf&&VALID_TF[s.tf])continue;
+   var parts=String(s.key||'').split('|');
+   /* key = sym|setup|dir|tf|day  -> index 3 */
+   if(parts.length>=5&&VALID_TF[parts[3]]){s.tf=parts[3];fixed++}
+   else unknown++;
+  }
+  if(fixed)apexSave();
+ }catch(e){}
+ window.TFBACKFILL={fixed:fixed,unknown:unknown,ts:Date.now()};
+ return window.TFBACKFILL};
+
+/* ---- 2. STRICT scoping: unknown-tf rows no longer match everything ---- */
+try{
+dxPoolFor=function(setupType){
+ var now=Date.now(),out=[],tf=curTf();
+ for(var i=0;i<APEXMEM.setups.length;i++){
+  var s=APEXMEM.setups[i];if(!s.res||s.result==='x')continue;
+  if(setupType&&s.setup!==setupType)continue;
+  if(tf&&s.tf!==tf)continue;                    /* strict: no tf => excluded */
+  var f=s.feat||{},fund=f.fund!=null?f.fund:0;
+  out.push({ageDays:(now-s.ts)/86400000,win:s.result==='w',
+   r:(s.result==='w'?(s.r!=null?s.r:1):-1),
+   context:{regime:s.regime,volRegime:(s.volReg2||dxVolFromLegacy(f.vr)),
+    fundingRegime:fund>25?'crowded-long':fund<-25?'crowded-short':'neutral',
+    htfAlign:s.bias||null}});
+ }
+ return out};
+}catch(e){console.warn('tfbf: dxPoolFor failed',e)}
+
+try{
+apexCal=function(setup,dir,regime,sc){
+ var tf=curTf();
+ const res=APEXMEM.setups.filter(s=>s.res&&s.result!=='x'&&(!tf||s.tf===tf));
+ let pool=res.filter(s=>s.setup===setup&&s.regime===regime&&apexBucket(s.score)===apexBucket(sc));
+ let scope='setup+regime+grade';
+ if(pool.length<12){pool=res.filter(s=>s.setup===setup&&s.regime===regime);scope='setup+regime'}
+ if(pool.length<12){pool=res.filter(s=>s.setup===setup);scope='setup'}
+ if(pool.length<8)return{p:null,n:pool.length,scope:scope};
+ const w=pool.filter(s=>s.result==='w').length;
+ return{p:(w+1)/(pool.length+2),n:pool.length,w:w,scope:scope}};
+}catch(e){console.warn('tfbf: apexCal failed',e)}
+
+/* strict inside the validator too (pool match + population filter) */
+try{
+ var _wf=dxWalkForward;
+ dxWalkForward=function(opts){
+  opts=opts||{};
+  var tf=opts.tf!==undefined?opts.tf:curTf();
+  var full=APEXMEM.setups;
+  if(tf)APEXMEM.setups=full.filter(function(s){return s.tf===tf});
+  try{return _wf(Object.assign({},opts,{tf:tf}))}
+  finally{APEXMEM.setups=full}};
+}catch(e){console.warn('tfbf: dxWalkForward wrap failed',e)}
+
+/* ---- 3. stamp tf explicitly on new rows (not just profile) ---- */
+try{
+ var _als=apexLogSetups;
+ apexLogSetups=function(){
+  var before=0;try{before=APEXMEM.setups.length}catch(e){}
+  var out=_als.apply(this,arguments);
+  try{
+   var n=0,tf=curTf();
+   for(var i=before;i<APEXMEM.setups.length;i++){
+    var s=APEXMEM.setups[i];
+    if(!s.tf&&tf){s.tf=tf;n++}
+    if(!s.profile){s.profile=S.profile||null;n++}}
+   if(n)apexSave();
+  }catch(e){}
+  return out};
+}catch(e){console.warn('tfbf: apexLogSetups wrap failed',e)}
+
+/* ---- 4. run the backfill after hydrate, and report it honestly ---- */
+try{
+ var _hyd=apexdbHydrate;
+ apexdbHydrate=async function(){
+  var r=await _hyd.apply(this,arguments);
+  try{tfBackfill();renderApex()}catch(e){}
+  return r};
+}catch(e){console.warn('tfbf: hydrate wrap failed',e)}
+
+try{
+ var _ra=renderApex;
+ renderApex=function(){
+  _ra();
+  try{
+   var b=window.TFBACKFILL;if(!b)return;
+   var strip=document.querySelector('#apexBody .apxstrip');if(!strip)return;
+   if(b.unknown>0&&strip.innerHTML.indexOf('tfunknown')<0){
+    strip.innerHTML+='<div class="tfunknown sub" style="margin-top:3px;color:var(--amber)">⚠ '
+     +b.unknown.toLocaleString()+' setups have no recoverable timeframe and are '
+     +'excluded from timeframe-scoped stats (they cannot be attributed to a speed tab).</div>';
+   }
+  }catch(e){}
+ };
+}catch(e){console.warn('tfbf: renderApex wrap failed',e)}
+
+/* run now for the already-loaded memory */
+try{tfBackfill();renderApex()}catch(e){}
+
+})();
+</script>
 </body>
 </html>
