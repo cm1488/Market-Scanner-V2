@@ -8188,5 +8188,241 @@ try{renderApex()}catch(e){}
 
 })();
 </script>
+<!-- =========================================================================
+     APEX — TIMEFRAME SEPARATION · v420.53
+     -------------------------------------------------------------------------
+     THE BUG (found in the 2026-08-10 walk-forward data): every evidence pool
+     in the app matched on regime/vol/funding but NOT timeframe. A 5-minute
+     scalp setup and a 4-hour swing setup were treated as the same evidence,
+     so switching speed tabs polluted every confidence number with history
+     from a different instrument. Soft weighting cannot fix this — the 0.15
+     similarity floor lets 600 scalp rows outvote 20 day rows — so the filter
+     is hard: same timeframe, or not in the pool.
+
+     WHAT CHANGES:
+       1. dxPoolFor        — expectancy/EV pools: current timeframe only
+       2. apexCal          — veto + APEX score pools: current timeframe only
+       3. dxWalkForward    — validator: pools AND summary stats scoped to the
+                             current speed tab's timeframe; rows carry tf +
+                             profile; keeps the 2,500-row O(n^2) guard
+       4. apexAnalogs      — same-timeframe analogs rank first (strong
+                             distance penalty, no hard cut so the list never
+                             goes empty)
+       5. apexLogSetups    — new records are stamped with the active profile
+                             (consv/balanced/aggr). Forward-only: history
+                             cannot be backfilled, and the stamp lives on
+                             this device + in exports, not in the cloud rows.
+       6. dxExportValidation — CSV gains timeframe + profile columns
+
+     EXPECTED CONSEQUENCE, ON PURPOSE: after switching to a new timeframe,
+     precedent counts start near zero, confidence is capped low, Best
+     Opportunity is often empty, and the bot refuses to trade until this
+     timeframe earns its own history. That is the fix working.
+     ========================================================================= -->
+<script>
+(function(){'use strict';
+
+try{
+ APP_VER='420.53';
+ var vb=document.getElementById('verBadge');if(vb)vb.textContent='V.420.53';
+ document.title='APEX Trading OS 420.53';
+}catch(e){}
+
+function curTf(){try{return (MODES[S.mode]||{}).trig||null}catch(e){return null}}
+function sameTf(a,b){return (a||null)===(b||null)}
+
+/* ---- 1. dxPoolFor: current timeframe only ---- */
+try{
+dxPoolFor=function(setupType){
+ var now=Date.now(),out=[],tf=curTf();
+ for(var i=0;i<APEXMEM.setups.length;i++){
+  var s=APEXMEM.setups[i];if(!s.res||s.result==='x')continue;
+  if(setupType&&s.setup!==setupType)continue;
+  if(tf&&s.tf&&s.tf!==tf)continue;                       /* the fix */
+  var f=s.feat||{},fund=f.fund!=null?f.fund:0;
+  out.push({
+   ageDays:(now-s.ts)/86400000,win:s.result==='w',
+   r:(s.result==='w'?(s.r!=null?s.r:1):-1),
+   context:{regime:s.regime,volRegime:(s.volReg2||dxVolFromLegacy(f.vr)),
+    fundingRegime:fund>25?'crowded-long':fund<-25?'crowded-short':'neutral',
+    htfAlign:s.bias||null}});
+ }
+ return out};
+}catch(e){console.warn('tfsep: dxPoolFor failed',e)}
+
+/* ---- 2. apexCal: current timeframe only ---- */
+try{
+apexCal=function(setup,dir,regime,sc){
+ var tf=curTf();
+ const res=APEXMEM.setups.filter(s=>s.res&&s.result!=='x'&&(!tf||!s.tf||s.tf===tf));
+ let pool=res.filter(s=>s.setup===setup&&s.regime===regime&&apexBucket(s.score)===apexBucket(sc));
+ let scope='setup+regime+grade';
+ if(pool.length<12){pool=res.filter(s=>s.setup===setup&&s.regime===regime);scope='setup+regime'}
+ if(pool.length<12){pool=res.filter(s=>s.setup===setup);scope='setup'}
+ if(pool.length<8)return{p:null,n:pool.length,scope:scope};
+ const w=pool.filter(s=>s.result==='w').length;
+ return{p:(w+1)/(pool.length+2),n:pool.length,w:w,scope:scope}};
+}catch(e){console.warn('tfsep: apexCal failed',e)}
+
+/* ---- 3. dxWalkForward: pools AND report scoped to the current timeframe.
+        Replaces the 420.51 wrapper, so the O(n^2) guard moves in here. ---- */
+try{
+dxWalkForward=function(opts){
+ opts=opts||{};
+ var VALIDATOR_MAX=2500;
+ var minHistory=opts.minHistory!=null?opts.minHistory:25;
+ var tf=opts.tf!==undefined?opts.tf:curTf();
+ var all=APEXMEM.setups
+  .filter(function(s){return s.res&&s.result!=='x'&&s.ts&&(!tf||!s.tf||s.tf===tf)})
+  .slice().sort(function(a,b){return a.ts-b.ts});
+ var capped=all.length>VALIDATOR_MAX;
+ if(capped)all=all.slice(-VALIDATOR_MAX);
+ if(all.length<minHistory+20)
+  return{insufficient:true,n:all.length,need:minHistory+20,tf:tf};
+ var rows=[];
+ for(var i=minHistory;i<all.length;i++){
+  var s=all[i];
+  var pool=[];
+  for(var j=0;j<i;j++){
+   var p=all[j];
+   if(p.setup!==s.setup)continue;
+   if(!sameTf(p.tf,s.tf))continue;                      /* the fix */
+   if(p.resTs&&p.resTs>s.ts)continue;
+   var pf=p.feat||{},pfund=pf.fund!=null?pf.fund:0;
+   pool.push({
+    ageDays:(s.ts-p.ts)/86400000,win:p.result==='w',
+    r:p.result==='w'?(p.r!=null?p.r:1):-1,
+    context:{regime:p.regime,volRegime:(p.volReg2||dxVolFromLegacy(pf.vr)),
+     fundingRegime:pfund>25?'crowded-long':pfund<-25?'crowded-short':'neutral',
+     htfAlign:p.bias||null}});
+  }
+  var exp=dxExpectancy(pool,dxContextForStored(s),{priorN:S.dx.priorN});
+  var conf=dxConfidence(dxRebuildRow(s),{expectancy:exp});
+  rows.push({
+   ts:s.ts,sym:s.sym,setup:s.setup,tf:s.tf||null,profile:s.profile||null,
+   dxConf:conf.pct,apexScore:s.score||0,evidenceN:exp.n,
+   win:s.result==='w',r:s.result==='w'?(s.r!=null?s.r:1):-1});
+ }
+ if(!rows.length)return{insufficient:true,n:all.length,need:minHistory+20,tf:tf};
+
+ function bucketize(rows,key,edges){
+  var out=edges.map(function(e,i){
+   return{lo:e,hi:edges[i+1]!=null?edges[i+1]:101,n:0,w:0,sumR:0}});
+  rows.forEach(function(x){
+   for(var b=0;b<out.length;b++){
+    if(x[key]>=out[b].lo&&x[key]<out[b].hi){out[b].n++;if(x.win)out[b].w++;out[b].sumR+=x.r;break}}});
+  return out.filter(function(b){return b.n>0}).map(function(b){
+   return{label:b.lo+'-'+(b.hi===101?100:b.hi-1),n:b.n,winRate:b.w/b.n,avgR:b.sumR/b.n}})}
+ function spearman(rows,key){
+  var n=rows.length;if(n<3)return null;
+  function ranks(vals){
+   var idx=vals.map(function(v,i){return{v:v,i:i}}).sort(function(a,b){return a.v-b.v});
+   var rk=new Array(vals.length);
+   for(var i=0;i<idx.length;){
+    var j=i;while(j+1<idx.length&&idx[j+1].v===idx[i].v)j++;
+    var avg=(i+j)/2+1;
+    for(var k=i;k<=j;k++)rk[idx[k].i]=avg;
+    i=j+1}
+   return rk}
+  var a=ranks(rows.map(function(x){return x[key]})),b=ranks(rows.map(function(x){return x.r}));
+  var ma=a.reduce(function(s,v){return s+v},0)/n,mb=b.reduce(function(s,v){return s+v},0)/n;
+  var num=0,da=0,db=0;
+  for(var i=0;i<n;i++){var xa=a[i]-ma,xb=b[i]-mb;num+=xa*xb;da+=xa*xa;db+=xb*xb}
+  return(da&&db)?num/Math.sqrt(da*db):null}
+ var edges=[0,40,55,70,85];
+ var top=rows.slice().sort(function(a,b){return b.dxConf-a.dxConf}).slice(0,Math.max(5,Math.floor(rows.length*0.2)));
+ var topApex=rows.slice().sort(function(a,b){return b.apexScore-a.apexScore}).slice(0,Math.max(5,Math.floor(rows.length*0.2)));
+ function summar(set){
+  var w=set.filter(function(x){return x.win}).length;
+  return{n:set.length,winRate:set.length?w/set.length:0,avgR:set.length?set.reduce(function(s,x){return s+x.r},0)/set.length:0}}
+ var baseline=summar(rows);
+ return{
+  insufficient:false,n:rows.length,evaluatedFrom:rows[0].ts,evaluatedTo:rows[rows.length-1].ts,
+  tf:tf,cappedTo:capped?VALIDATOR_MAX:null,
+  baseline:baseline,
+  dxBuckets:bucketize(rows,'dxConf',edges),
+  apexBuckets:bucketize(rows,'apexScore',edges),
+  dxSpearman:spearman(rows,'dxConf'),
+  apexSpearman:spearman(rows,'apexScore'),
+  dxTopQuintile:summar(top),
+  apexTopQuintile:summar(topApex),
+  rows:rows}};
+}catch(e){console.warn('tfsep: dxWalkForward failed',e)}
+
+/* ---- validator card: say out loud which timeframe was tested ---- */
+try{
+ var _drv=dxRenderValidation;
+ dxRenderValidation=function(){
+  _drv();
+  setTimeout(function(){
+   try{
+    var el=document.getElementById('dxValBody');
+    if(!el||el.querySelector('.tfnote'))return;
+    var tf=curTf();
+    var note=document.createElement('div');
+    note.className='sub tfnote';
+    note.style.cssText='margin-bottom:6px;padding:6px 9px;border:1px solid var(--line);border-radius:8px';
+    note.textContent='Tested on '+(tf||'current')+' setups only — each speed tab is its own experiment now. '
+     +'Switch tabs to test a different timeframe.';
+    el.insertBefore(note,el.firstChild);
+   }catch(e){}
+  },450)};
+}catch(e){console.warn('tfsep: dxRenderValidation wrap failed',e)}
+
+/* ---- 4. apexAnalogs: same-timeframe analogs first ---- */
+try{
+apexAnalogs=function(r,kk){
+ const k=kk||20;const res=APEXMEM.setups.filter(s=>s.res&&s.result!=='x'&&s.feat);
+ if(res.length<8)return{n:res.length,insufficient:true};
+ const f={rsi:r.rsiV,adx:r.adx,atrPct:r.atrPct,fund:r.fundAnn,oiRoc:r.oiRoc};
+ const scored=res.map(s=>{const g=s.feat;let d=0;
+  d+=Math.pow(((f.rsi||50)-(g.rsi||50))/25,2);
+  d+=Math.pow(((f.adx||20)-(g.adx||20))/15,2);
+  d+=Math.pow(((f.atrPct||1)-(g.atrPct||1))/1.5,2);
+  d+=Math.pow(((f.fund||0)-(g.fund||0))/30,2);
+  d+=Math.pow(((f.oiRoc||0)-(g.oiRoc||0))/5,2);
+  d+=(s.dir===r.dir?0:1.5);
+  d+=(s.regime===APEXREG.label?0:0.8);
+  d+=(s.setup===r.setup?0:0.6);
+  d+=((s.tf&&r.tf&&s.tf!==r.tf)?2.0:0);                 /* the fix */
+  return{s:s,d:d}}).sort((a,b)=>a.d-b.d).slice(0,k);
+ const w=scored.filter(x=>x.s.result==='w').length;
+ return{n:scored.length,w:w,p:(w+1)/(scored.length+2),insufficient:scored.length<8,
+  ex:scored.slice(0,3).map(x=>x.s.sym+' '+new Date(x.s.ts).toISOString().slice(5,10)+' '+(x.s.result==='w'?'✅':'❌'))}};
+}catch(e){console.warn('tfsep: apexAnalogs failed',e)}
+
+/* ---- 5. stamp the active profile on newly logged setups ---- */
+try{
+ var _als=apexLogSetups;
+ apexLogSetups=function(){
+  var before=0;try{before=APEXMEM.setups.length}catch(e){}
+  var out=_als.apply(this,arguments);
+  try{
+   var stamped=0;
+   for(var i=before;i<APEXMEM.setups.length;i++){
+    if(!APEXMEM.setups[i].profile){APEXMEM.setups[i].profile=S.profile||null;stamped++}}
+   if(stamped)apexSave();
+  }catch(e){}
+  return out};
+}catch(e){console.warn('tfsep: apexLogSetups wrap failed',e)}
+
+/* ---- 6. export gains timeframe + profile columns ---- */
+try{
+dxExportValidation=function(){
+ var v=DX.lastValidation;if(!v||v.insufficient)return;
+ var csv='ts,date,symbol,setup,timeframe,profile,dx_confidence,apex_score,precedents_available,result,realized_r\n'
+  +v.rows.map(function(x){
+   return[x.ts,new Date(x.ts).toISOString(),x.sym,x.setup,x.tf||'',x.profile||'',
+    x.dxConf,x.apexScore,x.evidenceN,x.win?'win':'loss',x.r].join(',')}).join('\n');
+ try{
+  var b=new Blob([csv],{type:'text/csv'}),u=URL.createObjectURL(b),a=document.createElement('a');
+  a.href=u;a.download='apex_walkforward_'+new Date().toISOString().slice(0,10)+'.csv';
+  document.body.appendChild(a);a.click();document.body.removeChild(a);
+  setTimeout(function(){URL.revokeObjectURL(u)},1000);
+ }catch(e){}};
+}catch(e){console.warn('tfsep: dxExportValidation failed',e)}
+
+})();
+</script>
 </body>
 </html>
