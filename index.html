@@ -8424,5 +8424,166 @@ dxExportValidation=function(){
 
 })();
 </script>
+<!-- =========================================================================
+     APEX — TIMEFRAME-SCOPED DISPLAYS · v420.54
+     -------------------------------------------------------------------------
+     420.53 separated the SCORING by timeframe; the dashboards still showed
+     everything mixed together, so switching speed tabs changed the math
+     invisibly while the Command Center kept displaying blended numbers.
+     Now the displays follow the same rule as the scoring: what you see is
+     the timeframe you are on.
+
+     SCOPED TO THE CURRENT SPEED TAB:
+       · APEX Command Center — W–L scoreboard, avg R, in-progress list,
+         ranked setups, memory count (with an "· N total" reminder)
+       · ☁ shared cloud scoreboard (queried per-timeframe from the db)
+       · 📐 Edge report and calibration
+       · Recent-loss-streak input to position sizing
+       · Bot paper stats, paper mirror, and the 50-trade stage gate —
+         new paper trades are stamped with their timeframe
+
+     DELIBERATELY LEFT GLOBAL:
+       · The 📓 journal and your personal record — that is YOUR real trading
+         history, one life, one account; it does not reset per tab
+       · The paper account's equity — money is money; only the trade
+         COUNTS are per-timeframe
+       · "Setups remembered" total in the small suffix — so the scoped
+         number never reads as data loss
+
+     Mechanism: displays run against a temporarily filtered view of memory,
+     restored immediately after (same pattern as the validator cap). Any
+     save fired mid-render is deferred until the full memory is restored,
+     so a scoped view can never be written to disk.
+     ========================================================================= -->
+<script>
+(function(){'use strict';
+
+try{
+ APP_VER='420.54';
+ var vb=document.getElementById('verBadge');if(vb)vb.textContent='V.420.54';
+ document.title='APEX Trading OS 420.54';
+}catch(e){}
+
+function curTf(){try{return (MODES[S.mode]||{}).trig||null}catch(e){return null}}
+function tfLabel(){try{return (MODES[S.mode]||{}).label||curTf()||''}catch(e){return ''}}
+
+/* run fn against a tf-filtered view of APEXMEM.setups; restore afterwards.
+   apexSave is queued during the swap so a filtered view can never persist. */
+var swapped=false;
+function withTfMemory(fn){
+ if(swapped)return fn();
+ var full=APEXMEM.setups,tf=curTf();
+ var _sv=apexSave,pend=false;
+ APEXMEM.setups=tf?full.filter(function(s){return !s.tf||s.tf===tf}):full;
+ apexSave=function(){pend=true};
+ swapped=true;
+ try{return fn()}
+ finally{APEXMEM.setups=full;apexSave=_sv;swapped=false;if(pend)try{apexSave()}catch(e){}}}
+
+/* same idea for the bot's paper book */
+var pswapped=false;
+function withTfPaper(fn){
+ if(pswapped)return fn();
+ var full=BOT.paper,tf=curTf();
+ BOT.paper=tf?full.filter(function(p){return !p.tf||p.tf===tf}):full;
+ pswapped=true;
+ try{return fn()}finally{BOT.paper=full;pswapped=false}}
+
+/* ---- 1. Command Center scoped; badge rewritten with scoped + total ---- */
+try{
+ var _ra=renderApex,lastScoreTf=null;
+ renderApex=function(){
+  var allN=0;try{allN=APEXMEM.setups.length}catch(e){}
+  withTfMemory(_ra);
+  try{
+   var strip=document.querySelector('#apexBody .apxstrip');
+   if(strip){
+    var tf=curTf(),tfN=APEXMEM.setups.filter(function(s){return !s.tf||s.tf===tf}).length;
+    strip.innerHTML=strip.innerHTML.replace(
+     /<b>[\d,]+<\/b> setups remembered(\s*<span class="sub">\([^)]*\)<\/span>)?/,
+     '<b>'+tfN.toLocaleString()+'</b> '+tfLabel()+' setups remembered'
+      +' <span class="sub">· '+allN.toLocaleString()+' total across all speeds</span>');
+   }
+  }catch(e){}
+  /* the shared cloud scoreboard is per-timeframe now — refresh it when the tab changes */
+  try{var tf2=curTf();if(tf2&&tf2!==lastScoreTf){lastScoreTf=tf2;apexdbScore()}}catch(e){}
+ };
+}catch(e){console.warn('tfdisp: renderApex wrap failed',e)}
+
+/* ---- 2. cloud scoreboard queried for THIS timeframe only ---- */
+try{
+apexdbScore=async function(){
+ try{
+  var tf=curTf();
+  var q=tf?'setups?select=outcomes(result,realized_r)&tf=eq.'+encodeURIComponent(tf)+'&limit=10000'
+          :'setups?select=outcomes(result,realized_r)&limit=10000';
+  const rows=await sbReq('GET',q);
+  if(!rows)return;
+  let w=0,l=0,sum=0,n=0;
+  for(const row of rows){
+   var oc=Array.isArray(row.outcomes)?row.outcomes[0]:row.outcomes;
+   if(!oc)continue;
+   if(oc.result==='w'){w++;n++;sum+=(oc.realized_r!=null?oc.realized_r:0)}
+   else if(oc.result==='l'){l++;n++;sum+=(oc.realized_r!=null?oc.realized_r:-1)}}
+  APEXDB.tot={w:w,l:l,n:n,avgR:n?sum/n:0,tf:tf};
+  try{renderApex()}catch(e){}
+ }catch(e){}};
+}catch(e){console.warn('tfdisp: apexdbScore failed',e)}
+
+/* ---- 3. edge report + calibration scoped, with a visible note ---- */
+try{
+ var _rer=renderEdgeReport;
+ renderEdgeReport=function(){
+  withTfMemory(_rer);
+  try{
+   var el=document.getElementById('edgeBody');
+   if(el&&!el.querySelector('.tfnote2')){
+    var note=document.createElement('div');
+    note.className='sub tfnote2';
+    note.style.cssText='margin-bottom:6px;padding:6px 9px;border:1px solid var(--line);border-radius:8px';
+    note.textContent='Scoped to '+tfLabel()+' ('+(curTf()||'?')+') setups only — switch speed tabs to report on a different timeframe.';
+    el.insertBefore(note,el.firstChild);
+   }
+  }catch(e){}
+ };
+}catch(e){console.warn('tfdisp: renderEdgeReport wrap failed',e)}
+
+/* ---- 4. loss-streak sizing input scoped ---- */
+try{
+dxRecentLossStreak=function(){
+ var tf=curTf();
+ var resolved=APEXMEM.setups.filter(function(s){
+  return s.res&&s.result!=='x'&&(!tf||!s.tf||s.tf===tf)})
+  .sort(function(a,b){return b.ts-a.ts});
+ var streak=0;
+ for(var i=0;i<resolved.length;i++){if(resolved[i].result==='l')streak++;else break}
+ return streak};
+}catch(e){console.warn('tfdisp: dxRecentLossStreak failed',e)}
+
+/* ---- 5. bot paper: stamp tf on new trades; scope stats, mirror, gate ---- */
+try{
+ var _be=botEnter;
+ botEnter=async function(d){
+  var b4=0;try{b4=BOT.paper.length}catch(e){}
+  var out=await _be(d);
+  try{
+   var stamped=0;
+   for(var i=b4;i<BOT.paper.length;i++)
+    if(!BOT.paper[i].tf){BOT.paper[i].tf=curTf();stamped++}
+   if(stamped)botSave();
+  }catch(e){}
+  return out};
+}catch(e){console.warn('tfdisp: botEnter wrap failed',e)}
+try{var _bps=botPaperStats;botPaperStats=function(){return withTfPaper(_bps)}}catch(e){}
+try{var _bss=botStageState;botStageState=function(){return withTfPaper(_bss)}}catch(e){}
+try{var _rpm=renderBotPaperMirror;renderBotPaperMirror=function(){return withTfPaper(_rpm)}}catch(e){}
+try{var _rb=renderBot;renderBot=function(){return withTfPaper(_rb)}}catch(e){}
+
+/* ---- repaint with the new scoping ---- */
+try{renderApex()}catch(e){}
+try{renderBotPaperMirror()}catch(e){}
+
+})();
+</script>
 </body>
 </html>
